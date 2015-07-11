@@ -11,14 +11,10 @@ import (
 )
 
 
-var linearBoundaries list.List
+var maxInputValue float64 = 1000
+var terminalWidth int16 = 130
 
 func main() {
-	maxInputValue := 1000
-	terminalWidth := 130
-	for boundaryIndex := 1; boundaryIndex < terminalWidth; boundaryIndex++ {
-		linearBoundaries.PushBack(float64(maxInputValue) * float64(boundaryIndex)/float64(terminalWidth))
-	}
 
 	scanner := bufio.NewScanner(os.Stdin)
 	var buffer list.List
@@ -39,19 +35,30 @@ func main() {
 	}
 
 }
+func linearScale(index int16) float64 {
+	return float64(maxInputValue) * float64(index)/float64(terminalWidth)
+}
 func sample(points list.List) {
 	histogram := make(map[float64]int64)
-
-	for e := points.Front(); e != nil; e = e.Next() {
+	var maximumDataPoint float64 = 0
+	for datapointElement := points.Front(); datapointElement != nil; datapointElement = datapointElement.Next() {
+		datapoint := datapointElement.Value.(float64)
+		if datapoint > maximumDataPoint {
+			maximumDataPoint = datapoint
+		}
 		var previousBoundary float64 = 0
-		for boundary := linearBoundaries.Front(); boundary != nil; boundary = boundary.Next() {
-			bound := boundary.Value.(float64)
-			if e.Value.(float64) > previousBoundary && e.Value.(float64) < bound {
-				histogram[bound] = histogram[bound] + 1
+		for i := int16(1); i <= terminalWidth; i++ {
+			boundary := linearScale(i)
+			if datapoint > previousBoundary && datapoint < boundary {
+				histogram[boundary] = histogram[boundary] + 1
 				break
 			}
-			previousBoundary = bound
+			previousBoundary = boundary
 		}
+	}
+	if maximumDataPoint > maxInputValue {
+		maxInputValue = maximumDataPoint * 1.2
+		fmt.Println("Adjusting scale to new maximum of ", maxInputValue)
 	}
 	printSample(histogram)
 }
@@ -61,8 +68,9 @@ func printSample(histogram map[float64]int64) {
 	// find the max and min amplitudes
 	var biggest int64 = 0
 	var smallest int64 = 9223372036854775807
-	for boundaryElement := linearBoundaries.Front(); boundaryElement != nil; boundaryElement = boundaryElement.Next() {
-		boundary := boundaryElement.Value.(float64)
+	for i := int16(1); i <= terminalWidth; i++ {
+		boundary := linearScale(i)
+
 		freq := histogram[boundary]
 		if (freq > biggest) {biggest = freq}
 		if (freq > 0 && freq < smallest) {smallest = freq}
@@ -72,14 +80,15 @@ func printSample(histogram map[float64]int64) {
 	//	fmt.Println("Colour was ", colourFromNumber(300, smallest, biggest))
 
 	// do the plotting
-	for boundaryElement := linearBoundaries.Front(); boundaryElement != nil; boundaryElement = boundaryElement.Next() {
-		boundary := boundaryElement.Value.(float64)
+	for i := int16(1); i <= terminalWidth; i++ {
+		boundary := linearScale(i)
 		number := histogram[boundary]
 		fmt.Print(colorizedDataPoint(number, smallest, biggest))
 	}
 	fmt.Printf("\n")
 }
 func greyscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
+	if (biggest - smallest == 0) {return 234}
 	return 234+(255-234)*(number-smallest)/(biggest-smallest) // higher contrast
 	//	return 234+((255-234)*number/max) // more accurate
 }
