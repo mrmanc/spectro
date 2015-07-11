@@ -57,6 +57,8 @@ func sample(points list.List) {
 }
 
 func printSample(histogram map[float64]int64) {
+
+	// find the max and min amplitudes
 	var biggest int64 = 0
 	var smallest int64 = 9223372036854775807
 	for boundaryElement := linearBoundaries.Front(); boundaryElement != nil; boundaryElement = boundaryElement.Next() {
@@ -69,14 +71,25 @@ func printSample(histogram map[float64]int64) {
 	//	fmt.Println("Min was ", smallest)
 	//	fmt.Println("Colour was ", colourFromNumber(300, smallest, biggest))
 
+	// do the plotting
 	for boundaryElement := linearBoundaries.Front(); boundaryElement != nil; boundaryElement = boundaryElement.Next() {
 		boundary := boundaryElement.Value.(float64)
-		fmt.Print(ansi.ColorCode(fmt.Sprintf(":%d", colourFromNumber(histogram[boundary], smallest, biggest))), " ", ansi.ColorCode("reset")) //█
+		number := histogram[boundary]
+		fmt.Print(colorizedDataPoint(number, smallest, biggest))
 	}
 	fmt.Printf("\n")
 }
-func colourFromNumber(number int64, min int64, max int64) int64 {
-	if max == 0 {return 0}
-	return 234+(255-234)*(number-min)/(max-min) // higher contrast
-//	return 234+((255-234)*number/max) // more accurate
+func greyscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
+	return 234+(255-234)*(number-smallest)/(biggest-smallest) // higher contrast
+	//	return 234+((255-234)*number/max) // more accurate
+}
+func greyscaleAnsiCodeFromNumber(number int64, smallest int64, biggest int64) string {
+	return ansi.ColorCode(fmt.Sprintf(":%d", greyscaleFromNumber(number, smallest, biggest)))
+}
+func resetText() string {
+	return ansi.ColorCode("reset")
+}
+func colorizedDataPoint(number int64, smallest int64, biggest int64) string {
+	return fmt.Sprint(greyscaleAnsiCodeFromNumber(number, smallest, biggest), " ", resetText())
+	//█
 }
