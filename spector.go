@@ -8,6 +8,7 @@ import (
 	"container/list"
 	"time"
 	"github.com/mgutz/ansi"
+	"math"
 )
 
 
@@ -35,8 +36,23 @@ func main() {
 	}
 
 }
+func scale(index int16) float64 {
+//	return linearScale(index)
+//	return logarithmicScale(index)
+	return exponentialScale(index)
+}
 func linearScale(index int16) float64 {
 	return float64(maxInputValue) * float64(index)/float64(terminalWidth)
+}
+func logarithmicScale(index int16) float64 {
+	var scaleFactor = maxInputValue / math.Log2(float64(terminalWidth+1))
+	var boundary float64 = scaleFactor * math.Log2(float64(index+1))
+	return boundary
+}
+func exponentialScale(index int16) float64 {
+	var scaleFactor = maxInputValue / (math.Exp2(float64(terminalWidth))-1)
+	var boundary float64 = scaleFactor * (math.Exp2(float64(index+1))-1)
+	return boundary
 }
 func sample(points list.List) {
 	histogram := make(map[float64]int64)
@@ -48,7 +64,7 @@ func sample(points list.List) {
 		}
 		var previousBoundary float64 = 0
 		for i := int16(1); i <= terminalWidth; i++ {
-			boundary := linearScale(i)
+			boundary := scale(i)
 			if datapoint > previousBoundary && datapoint < boundary {
 				histogram[boundary] = histogram[boundary] + 1
 				break
@@ -69,7 +85,7 @@ func printSample(histogram map[float64]int64) {
 	var biggest int64 = 0
 	var smallest int64 = 9223372036854775807
 	for i := int16(1); i <= terminalWidth; i++ {
-		boundary := linearScale(i)
+		boundary := scale(i)
 
 		freq := histogram[boundary]
 		if (freq > biggest) {biggest = freq}
@@ -81,7 +97,7 @@ func printSample(histogram map[float64]int64) {
 
 	// do the plotting
 	for i := int16(1); i <= terminalWidth; i++ {
-		boundary := linearScale(i)
+		boundary := scale(i)
 		number := histogram[boundary]
 		fmt.Print(colorizedDataPoint(number, smallest, biggest))
 	}
