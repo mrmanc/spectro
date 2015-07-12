@@ -109,12 +109,12 @@ func greyscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
 	//	return 234+((255-234)*number/max) // more accurate
 }
 func greyscaleAnsiCodeFromNumber(number int64, smallest int64, biggest int64) string {
-	return ansi.ColorCode(fmt.Sprintf(":%d", greyscaleFromNumber(number, smallest, biggest)))
+	color := greyscaleFromNumber(number, smallest, biggest)
+	return ansi.ColorCode(fmt.Sprintf("%d:%d", color, color))
 }
 func resetText() string {
 	return ansi.ColorCode("reset")
 }
 func colorizedDataPoint(number int64, smallest int64, biggest int64) string {
-	return fmt.Sprint(greyscaleAnsiCodeFromNumber(number, smallest, biggest), " ", resetText())
-	//█
+	return fmt.Sprint(greyscaleAnsiCodeFromNumber(number, smallest, biggest), "█", resetText())
 }
