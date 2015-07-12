@@ -91,9 +91,6 @@ func printSample(histogram map[float64]int64) {
 		if (freq > biggest) {biggest = freq}
 		if (freq > 0 && freq < smallest) {smallest = freq}
 	}
-	//	fmt.Println("Max was ", biggest)
-	//	fmt.Println("Min was ", smallest)
-	//	fmt.Println("Colour was ", colourFromNumber(300, smallest, biggest))
 
 	// do the plotting
 	for i := int16(1); i <= terminalWidth; i++ {
