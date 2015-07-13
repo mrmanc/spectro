@@ -37,9 +37,9 @@ func main() {
 
 }
 func scale(index int16) float64 {
-//	return linearScale(index)
+	return linearScale(index)
 //	return logarithmicScale(index)
-	return exponentialScale(index)
+//	return exponentialScale(index)
 }
 func linearScale(index int16) float64 {
 	return float64(maxInputValue) * float64(index)/float64(terminalWidth)
