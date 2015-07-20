@@ -14,6 +14,9 @@ import (
 
 var maxInputValue float64 = 1000
 var terminalWidth int16 = 130
+var useColour bool = true
+// ANSI colours found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
+var rainbow = []int64 {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
 
 func main() {
 
@@ -37,9 +40,9 @@ func main() {
 
 }
 func scale(index int16) float64 {
-	return linearScale(index)
-//	return logarithmicScale(index)
-//	return exponentialScale(index)
+	return linearScale(index) // uniform resolution
+//	return logarithmicScale(index) // higher resolution of higher numbers
+//	return exponentialScale(index) // higher resolution of small numbers
 }
 func linearScale(index int16) float64 {
 	return float64(maxInputValue) * float64(index)/float64(terminalWidth)
@@ -97,21 +100,32 @@ func printSample(histogram map[float64]int64) {
 		boundary := scale(i)
 		number := histogram[boundary]
 		fmt.Print(colorizedDataPoint(number, smallest, biggest))
+//		fmt.Print(colorizedDataPoint(int64(i), int64(0), int64(terminalWidth))) // tests a gradient
 	}
 	fmt.Printf("\n")
 }
 func greyscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
 	if (biggest - smallest == 0) {return 234}
 	return 234+(255-234)*(number-smallest)/(biggest-smallest) // higher contrast
-	//	return 234+((255-234)*number/max) // more accurate
+//	return 234+((255-234)*number/biggest) // more accurate
 }
-func greyscaleAnsiCodeFromNumber(number int64, smallest int64, biggest int64) string {
-	color := greyscaleFromNumber(number, smallest, biggest)
-	return ansi.ColorCode(fmt.Sprintf("%d:%d", color, color))
+func rainbowFromNumber(number int64, smallest int64, biggest int64) int64 {
+	// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
+	// down meant that the last colour would only be used for the biggest numbers (a smaller band than the other colours).
+	return rainbow[int64((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))]
+}
+func ansiCodeFromNumber(number int64, smallest int64, biggest int64) string {
+	var colorNumber int64
+	if useColour {
+		colorNumber = rainbowFromNumber(number, smallest, biggest)
+	} else {
+		colorNumber = greyscaleFromNumber(number, smallest, biggest)
+	}
+	return ansi.ColorCode(fmt.Sprintf("%d:%d", colorNumber, colorNumber))
 }
 func resetText() string {
 	return ansi.ColorCode("reset")
 }
 func colorizedDataPoint(number int64, smallest int64, biggest int64) string {
-	return fmt.Sprint(greyscaleAnsiCodeFromNumber(number, smallest, biggest), "█", resetText())
+	return fmt.Sprint(ansiCodeFromNumber(number, smallest, biggest), " ", resetText()) //█
 }
