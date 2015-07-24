@@ -11,12 +11,14 @@ import (
 	"math"
 )
 
-
-var maxInputValue float64 = 1000
+var maxInputValue float64 = 0
 var terminalWidth int16 = 130
 var useColour bool = true
+var scaleHasChanged bool = false
 // ANSI colours found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
 var rainbow = []int64 {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
+var legend string
+var newLegend string
 
 func main() {
 
@@ -29,7 +31,9 @@ func main() {
 		f, _ = strconv.ParseFloat(scanner.Text(), 64)
 		buffer.PushBack(f)
 		if time.Since(lastSampleTaken) >= timeBetweenSamples {
-			sample(buffer)
+			histogram := sample(buffer)
+			printSample(histogram)
+			printScale(histogram)
 			buffer.Init()
 			lastSampleTaken = time.Now()
 		}
@@ -57,7 +61,7 @@ func exponentialScale(index int16) float64 {
 	var boundary float64 = scaleFactor * (math.Exp2(float64(index+1))-1)
 	return boundary
 }
-func sample(points list.List) {
+func sample(points list.List) map[float64]int64 {
 	histogram := make(map[float64]int64)
 	var maximumDataPoint float64 = 0
 	for datapointElement := points.Front(); datapointElement != nil; datapointElement = datapointElement.Next() {
@@ -77,10 +81,37 @@ func sample(points list.List) {
 	}
 	if maximumDataPoint > maxInputValue {
 		maxInputValue = maximumDataPoint * 1.2
-		fmt.Println("Adjusting scale to new maximum of ", maxInputValue)
+		scaleHasChanged = true
+		newLegend = formatScale(histogram)
 	}
-	printSample(histogram)
+	return histogram
 }
+
+func printScale(histogram map[float64]int64) {
+	fmt.Fprint(os.Stderr, legend)
+	if (scaleHasChanged) {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("\nAdjusting scale to new maximum of %.2f", maxInputValue))
+		scaleHasChanged = false
+		legend = newLegend
+	}
+	fmt.Fprint(os.Stderr, "\r")
+}
+
+func formatScale(histogram map[float64]int64) string {
+	var scaleLabels string
+	for column := int16(0); column < terminalWidth; {
+		if (column - 1) % 10 == 0 {
+			label := fmt.Sprintf("|%d", int64(scale(column)))
+			column += int16(len(label))
+			scaleLabels += label
+		} else {
+			scaleLabels += " "
+			column ++
+		}
+	}
+	return scaleLabels
+}
+
 
 func printSample(histogram map[float64]int64) {
 
@@ -89,20 +120,18 @@ func printSample(histogram map[float64]int64) {
 	var smallest int64 = 9223372036854775807
 	for i := int16(1); i <= terminalWidth; i++ {
 		boundary := scale(i)
-
 		freq := histogram[boundary]
 		if (freq > biggest) {biggest = freq}
 		if (freq > 0 && freq < smallest) {smallest = freq}
 	}
-
 	// do the plotting
 	for i := int16(1); i <= terminalWidth; i++ {
 		boundary := scale(i)
 		number := histogram[boundary]
-		fmt.Print(colorizedDataPoint(number, smallest, biggest))
-//		fmt.Print(colorizedDataPoint(int64(i), int64(0), int64(terminalWidth))) // tests a gradient
+		fmt.Fprint(os.Stdout, colorizedDataPoint(number, smallest, biggest))
+//		fmt.Fprint(os.Stdout, colorizedDataPoint(int64(i), int64(0), int64(terminalWidth))) // tests a gradient
 	}
-	fmt.Printf("\n")
+	fmt.Fprint(os.Stdout, "\n")
 }
 func greyscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
 	if (biggest - smallest == 0) {return 234}
