@@ -8,7 +8,7 @@ func main() {
 //		fmt.Println(int(rand.NormFloat64()*20)+100)
 //	}
 	for true {
-		fmt.Println(int(rand.Intn(1000)))
-//		fmt.Println(int(rand.NormFloat64()*100)+400)
+//		fmt.Println(int(rand.Intn(1000)))
+		fmt.Println(int(rand.NormFloat64()*100)+400)
 	}
 }
