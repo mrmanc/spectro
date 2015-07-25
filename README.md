@@ -21,8 +21,6 @@ will display something a bit like this in your terminal:
 
 ## Future improvements
 
-* Output labels to describe the scale
-* Improve the colours to use a prettier scale
 * Allow user to select a scale (perhaps at run time)
 * Use signals on stdin to determine when to sample, which could be sent through the pipeline by an upstream process, allowing them to be generated against an existing file with timestamps
 * Determine the terminal width dynamically
