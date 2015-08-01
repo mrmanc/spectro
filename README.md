@@ -6,8 +6,12 @@ It samples data read from stdin and builds a histogram, using ANSI colour codes 
 
 It was inspired by [this Sysdig tweet](https://twitter.com/sysdig/status/618826906310324224), and follows on from my [distribution Awk script](https://github.com/mrmanc/log-ninja#distribution) which displays an actual histogram (although it also has some realtime functionality).
 
+Please be kind… it is my first play with Go, and it is horrendous code. I’ve not tested it on anything other than OS X yet.
+
 ## Example
 (dtrace example borrowed from [this HeatMap tool](https://github.com/brendangregg/HeatMap))
+
+Using the below (after adjusting spector.go to use the exponential scale)…
 
 ```
 $ sudo dtrace -qn 'syscall::read:entry { self->ts = timestamp; }
