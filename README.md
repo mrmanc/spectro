@@ -17,7 +17,12 @@ $ sudo dtrace -qn 'syscall::read:entry { self->ts = timestamp; }
 
 will display something a bit like this in your terminal:
 
-![Sample output](https://github.com/mrmanc/spector/blob/master/sample.png)
+![dtrace spectrograph](https://github.com/mrmanc/spector/blob/master/sample.png)
+
+Using the provided normal command to generate some test data based on a normal distribution, you might see the below:
+
+![normal distribution spectrograph](https://github.com/mrmanc/spector/blob/master/normal-distribution.png)
+
 
 ## Historic data
 
