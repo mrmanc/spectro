@@ -1,6 +1,6 @@
-# Spector
+# spector
 
-Spector is a command line spectral analysis tool designed to visualise the distribution of streams of numbers representing something like latency, duration or size.
+spector is a command line spectral analysis tool designed to visualise the distribution of streams of numbers representing something like latency, duration or size.
 
 It samples data read from stdin and builds a histogram, using ANSI colour codes to display the distribution as a heat map.
 
