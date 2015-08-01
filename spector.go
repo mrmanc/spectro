@@ -9,6 +9,7 @@ import (
 	"time"
 	"github.com/mgutz/ansi"
 	"math"
+	"regexp"
 )
 
 var maxInputValue float64 = 0
@@ -21,26 +22,44 @@ var legend string
 var newLegend string
 
 func main() {
+	pacemakerPresentPattern, _ := regexp.Compile("\\[PACEMAKER_PRESENT\\]")
+	pacemakerIterationPattern, _ := regexp.Compile("PACEMAKER_ITERATION")
+	numberPattern, _ := regexp.Compile("[0-9.]+$")
 
 	scanner := bufio.NewScanner(os.Stdin)
 	var buffer list.List
+
 	lastSampleTaken := time.Now()
 	timeBetweenSamples := time.Second / 50
+	pacemakerPresent := false
+
 	for scanner.Scan() {
-		var f float64
-		f, _ = strconv.ParseFloat(scanner.Text(), 64)
-		buffer.PushBack(f)
-		if time.Since(lastSampleTaken) >= timeBetweenSamples {
+		lineOfText := scanner.Text()
+		if (pacemakerPresentPattern.MatchString(lineOfText)) {
+			pacemakerPresent = true
+		}
+		pacemakerIterationSignal := pacemakerIterationPattern.MatchString(lineOfText)
+		if (!pacemakerIterationSignal && numberPattern.MatchString(lineOfText)) {
+			var f float64
+			numberText := numberPattern.FindString(lineOfText)
+			f, _ = strconv.ParseFloat(numberText, 64)
+			buffer.PushBack(f)
+		}
+		if (!pacemakerPresent && time.Since(lastSampleTaken) >= timeBetweenSamples) || pacemakerIterationSignal {
 			histogram := sample(buffer)
 			printSample(histogram)
 			printScale(histogram)
 			buffer.Init()
 			lastSampleTaken = time.Now()
+			if pacemakerPresent {
+				time.Sleep(time.Second)
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "reading standard input:", err)
 	}
+	fmt.Fprint(os.Stdout, "\n")
 
 }
 func scale(index int16) float64 {
@@ -143,10 +162,15 @@ func rainbowFromNumber(number int64, smallest int64, biggest int64) int64 {
 	if (number == 0) {
 		index = 0
 	} else {
-		index = int64((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))
+		if ((biggest-smallest) > 0) {
+			// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
+			// down meant that the last colour would only be used for the biggest numbers (a smaller band than the other colours).
+			index = int64((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))
+		} else {
+			// not enough variation to create any spectrum, so just use last colour
+			index = int64(len(rainbow)-1)
+		}
 	}
-	// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
-	// down meant that the last colour would only be used for the biggest numbers (a smaller band than the other colours).
 	return rainbow[index]
 }
 func ansiCodeFromNumber(number int64, smallest int64, biggest int64) string {

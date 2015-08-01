@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/normal-stream/normal-stream.iml" filepath="$PROJECT_DIR$/normal-stream/normal-stream.iml" />
       <module fileurl="file://$PROJECT_DIR$/spector.iml" filepath="$PROJECT_DIR$/spector.iml" />
     </modules>
   </component>
