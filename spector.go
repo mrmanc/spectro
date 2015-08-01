@@ -139,9 +139,15 @@ func greyscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
 //	return 234+((255-234)*number/biggest) // more accurate
 }
 func rainbowFromNumber(number int64, smallest int64, biggest int64) int64 {
+	var index int64
+	if (number == 0) {
+		index = 0
+	} else {
+		index = int64((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))
+	}
 	// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
 	// down meant that the last colour would only be used for the biggest numbers (a smaller band than the other colours).
-	return rainbow[int64((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))]
+	return rainbow[index]
 }
 func ansiCodeFromNumber(number int64, smallest int64, biggest int64) string {
 	var colorNumber int64
