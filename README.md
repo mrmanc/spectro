@@ -47,7 +47,7 @@ Tue Nov 11 10:14:59.199 duration=72.7
 
 ## Future improvements
 
-* Allow user to select a scale (perhaps at run time)
+* Allow user to select a scale out of linear, exponential or logarithmic (perhaps at run time)
 * Allow user to select whether to use grayscale or colour
 * Allow user to select the update frequency
 * Determine the terminal width dynamically
