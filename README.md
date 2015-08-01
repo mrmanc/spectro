@@ -49,6 +49,10 @@ Tue Nov 11 10:14:58.510 duration=66.0
 Tue Nov 11 10:14:59.199 duration=72.7
 ```
 
+## Building
+
+Once you have [installed Go](https://golang.org/doc/install) you can build the commands using 'go build spector.go && go build normal.go && go build pacemaker.go'. That should create binaries in that directory, which you can either put on your path or run in situ. I’ll get around to working out the correct way to organise the project at some point as I know it should be possible to get Go to install the commands.
+
 ## Future improvements
 
 * Allow user to select a scale out of linear, exponential or logarithmic (perhaps at run time)
