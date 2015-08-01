@@ -19,8 +19,30 @@ will display something a bit like this in your terminal:
 
 ![Sample output](https://github.com/mrmanc/spector/blob/master/sample.png)
 
+## Historic data
+
+If you have historic logs with a formatted time in the line, you can use the pacemaker command to indicate to spector how to sample the data. The pacemaker command will add extra lines to the streamed output as a signal to the spector command. Feel free to leave the time text in the output, so long as the number you wish to visualise is the last thing in the line.
+
+For example, with a log file such as below, you could run `cat test.log | pacemaker | spector`.
+
+```
+Tue Nov 11 10:14:52.130 duration=60.7
+Tue Nov 11 10:14:53.130 duration=15.2
+Tue Nov 11 10:14:53.131 duration=39.5
+Tue Nov 11 10:14:53.140 duration=20.2
+Tue Nov 11 10:14:53.237 duration=55.9
+Tue Nov 11 10:14:56.845 duration=44.4
+Tue Nov 11 10:14:58.493 duration=56.8
+Tue Nov 11 10:14:58.510 duration=62.4
+Tue Nov 11 10:14:58.510 duration=24.3
+Tue Nov 11 10:14:58.510 duration=43.2
+Tue Nov 11 10:14:58.510 duration=66.0
+Tue Nov 11 10:14:59.199 duration=72.7
+```
+
 ## Future improvements
 
 * Allow user to select a scale (perhaps at run time)
-* Use signals on stdin to determine when to sample, which could be sent through the pipeline by an upstream process, allowing them to be generated against an existing file with timestamps
+* Allow user to select whether to use grayscale or colour
+* Allow user to select the update frequency
 * Determine the terminal width dynamically
