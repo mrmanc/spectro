@@ -70,12 +70,12 @@ func scale(index int) float64 {
 func linearScale(index int) float64 {
 	return float64(maxInputValue) * float64(index)/float64(terminalWidth)
 }
-func logarithmicScale(index int16) float64 {
+func logarithmicScale(index int) float64 {
 	var scaleFactor = maxInputValue / math.Log2(float64(terminalWidth+1))
 	var boundary float64 = scaleFactor * math.Log2(float64(index+1))
 	return boundary
 }
-func exponentialScale(index int16) float64 {
+func exponentialScale(index int) float64 {
 	var scaleFactor = maxInputValue / (math.Exp2(float64(terminalWidth))-1)
 	var boundary float64 = scaleFactor * (math.Exp2(float64(index+1))-1)
 	return boundary
