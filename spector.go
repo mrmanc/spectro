@@ -15,7 +15,7 @@ import (
 )
 
 var maxInputValue float64 = 0
-var terminalWidth int = 130
+var terminalWidth uint = 130
 var scaleHasChanged bool = false
 // ANSI colors found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
 var rainbow = []int64 {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
@@ -95,17 +95,17 @@ func main() {
 	fmt.Fprint(os.Stdout, "\n")
 }
 
-func linearScale(index int) float64 {
+func linearScale(index uint) float64 {
 	return float64(maxInputValue) * float64(index)/float64(terminalWidth)
 }
 
-func logarithmicScale(index int) float64 {
+func logarithmicScale(index uint) float64 {
 	var scaleFactor = maxInputValue / math.Log2(float64(terminalWidth+1))
 	var boundary float64 = scaleFactor * math.Log2(float64(index+1))
 	return boundary
 }
 
-func exponentialScale(index int) float64 {
+func exponentialScale(index uint) float64 {
 	var scaleFactor = maxInputValue / (math.Exp2(float64(terminalWidth))-1)
 	var boundary float64 = scaleFactor * (math.Exp2(float64(index+1))-1)
 	return boundary
@@ -119,7 +119,7 @@ func sample(points list.List) map[float64]int64 {
 			maximumDataPoint = datapoint
 		}
 		var previousBoundary float64 = 0
-		for column := 1; column <= terminalWidth; column++ {
+		for column := uint(1); column <= terminalWidth; column++ {
 			boundary := scale(column)
 			if datapoint > previousBoundary && datapoint < boundary {
 				histogram[boundary] = histogram[boundary] + 1
@@ -148,10 +148,10 @@ func printScale(histogram map[float64]int64, paddingWidth int) {
 
 func formatScale(histogram map[float64]int64) string {
 	var scaleLabels string
-	for column := 0; column < terminalWidth; {
+	for column := uint(0); column < terminalWidth; {
 		if (column - 1) % 10 == 0 {
 			label := fmt.Sprintf("|%d", int64(scale(column)))
-			column += len(label)
+			column += uint(len(label))
 			scaleLabels += label
 		} else {
 			scaleLabels += " "
@@ -167,7 +167,7 @@ var smallest int64 = 9223372036854775807
 func printSample(histogram map[float64]int64, timeText string) {
 	// find the max and min amplitudes
 	amplitudeScaleAdjusted := false
-	for column := 1; column <= terminalWidth; column++ {
+	for column := uint(1); column <= terminalWidth; column++ {
 		boundary := scale(column)
 		currentAmplitude := histogram[boundary]
 		if (currentAmplitude > biggest) {
@@ -184,7 +184,7 @@ func printSample(histogram map[float64]int64, timeText string) {
 	}
 	renderedSample := ""
 	// do the plotting
-	for column := 1; column <= terminalWidth; column++ {
+	for column := uint(1); column <= terminalWidth; column++ {
 		boundary := scale(column)
 		number := histogram[boundary]
 		renderedSample += colorizedDataPoint(number, smallest, biggest)
