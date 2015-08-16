@@ -180,7 +180,7 @@ func printSample(histogram map[float64]int64, timeText string) {
 		}
 	}
 	if (amplitudeScaleAdjusted) {
-		fmt.Fprintln(os.Stderr, "\nAdapting amplitude scale (shading) to suit data.")
+		fmt.Fprintf(os.Stderr, "\nAdapting amplitude scale (shading) to suit range (%v up to %v).\n", smallest, biggest)
 	}
 	renderedSample := ""
 	// do the plotting
@@ -193,6 +193,7 @@ func printSample(histogram map[float64]int64, timeText string) {
 }
 
 func grayscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
+	if (number == 0) {return 16}
 	if (biggest - smallest == 0) {return 234}
 	return 234+(255-234)*(number-smallest)/(biggest-smallest) // higher contrast
 //	return 234+((255-234)*number/biggest) // more accurate
