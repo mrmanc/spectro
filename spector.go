@@ -25,7 +25,7 @@ var timeBetweenSamples = time.Second / 1
 var colorScheme string
 var scaleType string
 var scale = linearScale
-var colorFromNumber = greyscaleFromNumber
+var colorFromNumber = grayscaleFromNumber
 
 func init() {
 	flag.StringVar(&colorScheme, "color", "grayscale", "how to render the amplitudes (grayscale, rainbow)")
@@ -34,7 +34,7 @@ func init() {
 
 	switch colorScheme {
 	case "grayscale":
-		colorFromNumber = greyscaleFromNumber
+		colorFromNumber = grayscaleFromNumber
 	case "rainbow":
 		colorFromNumber = rainbowFromNumber
 	default:
@@ -192,7 +192,7 @@ func printSample(histogram map[float64]int64, timeText string) {
 	fmt.Fprintf(os.Stdout, "%s %s\n", timeText, renderedSample)
 }
 
-func greyscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
+func grayscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
 	if (biggest - smallest == 0) {return 234}
 	return 234+(255-234)*(number-smallest)/(biggest-smallest) // higher contrast
 //	return 234+((255-234)*number/biggest) // more accurate
