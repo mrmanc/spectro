@@ -18,7 +18,7 @@ var maxInputValue float64 = 0
 var terminalWidth uint = 130
 var scaleHasChanged bool = false
 // ANSI colors found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
-var rainbow = []int64 {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
+var rainbow = []uint {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
 var legend string
 var newLegend string
 var timeBetweenSamples = time.Second / 1
@@ -84,7 +84,7 @@ func main() {
 			}
 			histogram := sample(buffer)
 			printSample(histogram, timeText)
-			printScale(histogram, len(timeText))
+			printScale(histogram, uint(len(timeText)))
 			buffer.Init()
 			lastSampleTaken = time.Now()
 		}
@@ -110,8 +110,8 @@ func exponentialScale(index uint) float64 {
 	var boundary float64 = scaleFactor * (math.Exp2(float64(index+1))-1)
 	return boundary
 }
-func sample(points list.List) map[float64]int64 {
-	histogram := make(map[float64]int64)
+func sample(points list.List) map[float64]uint64 {
+	histogram := make(map[float64]uint64)
 	var maximumDataPoint float64 = 0
 	for datapointElement := points.Front(); datapointElement != nil; datapointElement = datapointElement.Next() {
 		datapoint := datapointElement.Value.(float64)
@@ -136,7 +136,7 @@ func sample(points list.List) map[float64]int64 {
 	return histogram
 }
 
-func printScale(histogram map[float64]int64, paddingWidth int) {
+func printScale(histogram map[float64]uint64, paddingWidth uint) {
 	fmt.Fprintf(os.Stderr,"%"+strconv.FormatInt(int64(paddingWidth), 10)+"s %s", "", legend)
 	if (scaleHasChanged) {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("\nAdjusting scale to new maximum of %.2f", maxInputValue))
@@ -146,11 +146,11 @@ func printScale(histogram map[float64]int64, paddingWidth int) {
 	fmt.Fprint(os.Stderr, "\r")
 }
 
-func formatScale(histogram map[float64]int64) string {
+func formatScale(histogram map[float64]uint64) string {
 	var scaleLabels string
 	for column := uint(0); column < terminalWidth; {
 		if (column - 1) % 10 == 0 {
-			label := fmt.Sprintf("|%d", int64(scale(column)))
+			label := fmt.Sprintf("|%d", uint64(scale(column)))
 			column += uint(len(label))
 			scaleLabels += label
 		} else {
@@ -161,10 +161,10 @@ func formatScale(histogram map[float64]int64) string {
 	return scaleLabels
 }
 
-var biggest int64 = 0
-var smallest int64 = 9223372036854775807
+var biggest uint64 = 0
+var smallest uint64 = 18446744073709551615
 
-func printSample(histogram map[float64]int64, timeText string) {
+func printSample(histogram map[float64]uint64, timeText string) {
 	// find the max and min amplitudes
 	amplitudeScaleAdjusted := false
 	for column := uint(1); column <= terminalWidth; column++ {
@@ -192,31 +192,31 @@ func printSample(histogram map[float64]int64, timeText string) {
 	fmt.Fprintf(os.Stdout, "%s %s\n", timeText, renderedSample)
 }
 
-func grayscaleFromNumber(number int64, smallest int64, biggest int64) int64 {
+func grayscaleFromNumber(number uint64, smallest uint64, biggest uint64) uint {
 	if (number == 0) {return 16}
 	if (biggest - smallest == 0) {return 234}
-	return 234+(255-234)*(number-smallest)/(biggest-smallest) // higher contrast
+	return uint(234)+uint((255-234)*(number-smallest)/(biggest-smallest)) // higher contrast
 //	return 234+((255-234)*number/biggest) // more accurate
 }
 
-func rainbowFromNumber(number int64, smallest int64, biggest int64) int64 {
-	var index int64
+func rainbowFromNumber(number uint64, smallest uint64, biggest uint64) uint {
+	var index uint
 	if (number == 0) {
 		index = 0
 	} else {
 		if ((biggest-smallest) > 0) {
 			// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
 			// down meant that the last color would only be used for the biggest numbers (a smaller band than the other colors).
-			index = int64((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))
+			index = uint((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))
 		} else {
 			// not enough variation to create any spectrum, so just use last color
-			index = int64(len(rainbow)-1)
+			index = uint(len(rainbow)-1)
 		}
 	}
 	return rainbow[index]
 }
 
-func ansiCodeFromNumber(number int64, smallest int64, biggest int64) string {
+func ansiCodeFromNumber(number uint64, smallest uint64, biggest uint64) string {
 	colorNumber := colorFromNumber(number, smallest, biggest)
 	return ansi.ColorCode(fmt.Sprintf("%d:%d", colorNumber, colorNumber))
 }
@@ -225,6 +225,6 @@ func resetText() string {
 	return ansi.ColorCode("reset")
 }
 
-func colorizedDataPoint(number int64, smallest int64, biggest int64) string {
+func colorizedDataPoint(number uint64, smallest uint64, biggest uint64) string {
 	return fmt.Sprint(ansiCodeFromNumber(number, smallest, biggest), " ", resetText()) // Using this character may help if your copy / paste does not support background formatting █
 }
