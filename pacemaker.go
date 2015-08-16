@@ -7,8 +7,14 @@ import (
 	"regexp"
 	"strings"
 	"strconv"
+	"flag"
+	"time"
 )
-
+var nowait bool
+func init() {
+	flag.BoolVar(&nowait, "nowait", false, "whether to pause between plotting samples")
+	flag.Parse()
+}
 func main() {
 	fmt.Println("[PACEMAKER_PRESENT]")
 	timePattern, _ := regexp.Compile("[012][0-9]:[0-5][0-9]:[0-5][0-9]")
@@ -16,8 +22,7 @@ func main() {
 	var lastStart int
 	firstLine := true
 	for scanner.Scan() {
-		var line string
-		line = scanner.Text()
+		line := scanner.Text()
 		if (timePattern.MatchString(line)) {
 			timeText := timePattern.FindString(line)
 			currentSeconds := secondsFromString(timeText)
@@ -25,13 +30,19 @@ func main() {
 				lastStart = currentSeconds
 				firstLine = false
 			}
+			if (currentSeconds < lastStart) {
+				lastStart = currentSeconds
+			}
 			for currentSeconds != lastStart  {
-				fmt.Fprintf(os.Stdout, "PACEMAKER_ITERATION:%d\n", lastStart)
+				fmt.Fprintf(os.Stdout, "PACEMAKER_ITERATION %s\n", timeText)
 				lastStart = (lastStart + 1) % (60*60*24)
+				if (!nowait) {
+					time.Sleep(time.Second)
+				}
 			}
 			fmt.Println(line)
 		} else {
-			fmt.Println("did not match")
+			fmt.Printf("Could not find a time within the line of text: %s\n", line)
 		}
 	}
 	if err := scanner.Err(); err != nil {
