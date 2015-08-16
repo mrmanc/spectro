@@ -59,3 +59,4 @@ Once you have [installed Go](https://golang.org/doc/install) you can build the c
 * Allow user to select whether to use grayscale or colour
 * Allow user to select the update frequency
 * Determine the terminal width dynamically
+* Potentially split the summarisation (histogram) functionality from the rendering, since it is useful on it’s own and can allow you to use much less space to store a replay of a period in plain text
