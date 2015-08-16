@@ -17,7 +17,7 @@ import (
 var maxInputValue float64 = 0
 var terminalWidth int = 130
 var scaleHasChanged bool = false
-// ANSI colours found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
+// ANSI colors found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
 var rainbow = []int64 {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
 var legend string
 var newLegend string
@@ -25,7 +25,7 @@ var timeBetweenSamples = time.Second / 1
 var colorScheme string
 var scaleType string
 var scale = linearScale
-var colourFromNumber = greyscaleFromNumber
+var colorFromNumber = greyscaleFromNumber
 
 func init() {
 	flag.StringVar(&colorScheme, "color", "grayscale", "how to render the amplitudes (grayscale, rainbow)")
@@ -34,9 +34,9 @@ func init() {
 
 	switch colorScheme {
 	case "grayscale":
-		colourFromNumber = greyscaleFromNumber
+		colorFromNumber = greyscaleFromNumber
 	case "rainbow":
-		colourFromNumber = rainbowFromNumber
+		colorFromNumber = rainbowFromNumber
 	default:
 		fmt.Fprintln(os.Stderr, "Did not recognise colors provided. Must be one of grayscale, rainbow")
 		os.Exit(1)
@@ -205,10 +205,10 @@ func rainbowFromNumber(number int64, smallest int64, biggest int64) int64 {
 	} else {
 		if ((biggest-smallest) > 0) {
 			// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
-			// down meant that the last colour would only be used for the biggest numbers (a smaller band than the other colours).
+			// down meant that the last color would only be used for the biggest numbers (a smaller band than the other colors).
 			index = int64((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))
 		} else {
-			// not enough variation to create any spectrum, so just use last colour
+			// not enough variation to create any spectrum, so just use last color
 			index = int64(len(rainbow)-1)
 		}
 	}
@@ -216,7 +216,7 @@ func rainbowFromNumber(number int64, smallest int64, biggest int64) int64 {
 }
 
 func ansiCodeFromNumber(number int64, smallest int64, biggest int64) string {
-	colorNumber := colourFromNumber(number, smallest, biggest)
+	colorNumber := colorFromNumber(number, smallest, biggest)
 	return ansi.ColorCode(fmt.Sprintf("%d:%d", colorNumber, colorNumber))
 }
 
