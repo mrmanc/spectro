@@ -33,6 +33,8 @@ var scale = linearScale
 func init() {
 	flag.StringVar(&colorScheme, "color", "heat", "how to render the amplitudes (grayscale, rainbow)")
 	flag.StringVar(&scaleType, "scale", "linear", "the scale to use for the x/amplitude axis (linear, logarithmic, exponential)")
+	flag.Float64Var(&maxInputValue, "max", 0, "allows you to specify the expected maximum value to avoid rendering interruptions")
+	flag.Uint64Var(&biggest, "max-amp", 0, "allows you to specify the expected maximum amplitude value (i.e. frequency, which depends on the width of the summarisation buckets) to avoid rendering interruptions")
 	flag.Parse()
 
 	switch colorScheme {
@@ -135,6 +137,9 @@ func sample(points list.List) map[float64]uint64 {
 			previousBoundary = boundary
 		}
 	}
+	if len(legend) == 0 {
+		legend = formatScale(histogram)
+	}
 	if maximumDataPoint > maxInputValue {
 		maxInputValue = maximumDataPoint * 1.2
 		scaleHasChanged = true
@@ -156,8 +161,8 @@ func printScale(histogram map[float64]uint64, paddingWidth uint) {
 func formatScale(histogram map[float64]uint64) string {
 	var scaleLabels string
 	for column := uint(0); column < terminalWidth; {
-		if (column - 1) % 10 == 0 {
-			label := fmt.Sprintf("|%d", uint64(scale(column)))
+		label := fmt.Sprintf("|%d", uint64(scale(column)))
+		if (column - 1) % 10 == 0 && column + uint(len(label)) < terminalWidth {
 			column += uint(len(label))
 			scaleLabels += label
 		} else {
@@ -169,7 +174,6 @@ func formatScale(histogram map[float64]uint64) string {
 }
 
 var biggest uint64 = 0
-var smallest uint64 = 18446744073709551615
 
 func printSample(histogram map[float64]uint64, timeText string) {
 	// find the max and min amplitudes
@@ -178,46 +182,37 @@ func printSample(histogram map[float64]uint64, timeText string) {
 		boundary := scale(column)
 		currentAmplitude := histogram[boundary]
 		if (currentAmplitude > biggest) {
-			biggest = currentAmplitude
-			amplitudeScaleAdjusted = true
-		}
-		if (currentAmplitude > 0 && currentAmplitude < smallest) {
-			smallest = currentAmplitude
+			biggest = uint64(float64(currentAmplitude) * 1.1)
 			amplitudeScaleAdjusted = true
 		}
 	}
 	if (amplitudeScaleAdjusted) {
-		fmt.Fprintf(os.Stderr, "\nAdapting amplitude scale (shading) to suit range (%v up to %v).\n", smallest, biggest)
+		fmt.Fprintf(os.Stderr, "\nAdjusting amplitude scale (shading) to suit maximum of %v.\n", biggest)
 	}
 	renderedSample := ""
 	// do the plotting
 	for column := uint(1); column <= terminalWidth; column++ {
 		boundary := scale(column)
 		number := histogram[boundary]
-		renderedSample += colorizedDataPoint(number, smallest, biggest)
+		renderedSample += colorizedDataPoint(number, biggest)
 	}
 	fmt.Fprintf(os.Stdout, "%s %s\n", timeText, renderedSample)
 }
 
-func colorFromNumber(number uint64, smallest uint64, biggest uint64) uint {
+func colorFromNumber(number uint64, biggest uint64) uint {
 	var index uint
 	if (number == 0) {
 		index = 0
 	} else {
-		if ((biggest-smallest) > 0) {
-			// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
-			// down meant that the last color would only be used for the biggest numbers (a smaller band than the other colors).
-			index = uint((float64(float64(len(colorScale)-1)-0.1) * float64(number-smallest) / float64(biggest-smallest)))+1
-		} else {
-			// not enough variation to create any spectrum, so just use last color
-			index = uint(len(colorScale)-1)
-		}
+		// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
+		// down meant that the last color would only be used for the biggest numbers (a smaller band than the other colors).
+		index = uint((float64(float64(len(colorScale)-1)-0.1) * float64(number) / float64(biggest)))+1
 	}
 	return colorScale[index]
 }
 
-func ansiCodeFromNumber(number uint64, smallest uint64, biggest uint64) string {
-	colorNumber := colorFromNumber(number, smallest, biggest)
+func ansiCodeFromNumber(number uint64, biggest uint64) string {
+	colorNumber := colorFromNumber(number, biggest)
 	return ansi.ColorCode(fmt.Sprintf("%d:%d", colorNumber, colorNumber))
 }
 
@@ -225,6 +220,6 @@ func resetText() string {
 	return ansi.ColorCode("reset")
 }
 
-func colorizedDataPoint(number uint64, smallest uint64, biggest uint64) string {
-	return fmt.Sprint(ansiCodeFromNumber(number, smallest, biggest), " ", resetText()) // Using this character may help if your copy / paste does not support background formatting █
+func colorizedDataPoint(number uint64, biggest uint64) string {
+	return fmt.Sprint(ansiCodeFromNumber(number, biggest), " ", resetText()) // Using this character may help if your copy / paste does not support background formatting █
 }
