@@ -23,14 +23,17 @@ will display something a bit like this in your terminal:
 
 ![dtrace spectrograph](https://github.com/mrmanc/spector/blob/master/sample.png)
 
-Using the provided normal command to generate some test data based on a normal distribution, you might see the below:
+You can use the provided normal command to generate some test data based on a normal distribution:
 
-![normal distribution spectrograph](https://github.com/mrmanc/spector/blob/master/normal-distribution.png)
+![normal distribution spectrograph](https://dl.dropboxusercontent.com/u/4117956/spector/normal.gif)
 
+Using the provided sample.log and the pacemaker command you can play back activity:
+
+![sample log file spectrograph](https://dl.dropboxusercontent.com/u/4117956/spector/sample.gif)
 
 ## Historic data
 
-If you have historic logs with a formatted time in the line, you can use the pacemaker command to indicate to spector how to sample the data. The pacemaker command will add extra lines to the streamed output as a signal to the spector command. Feel free to leave the time text in the output, so long as the number you wish to visualise is the last thing in the line.
+If you have historic logs with a formatted time in the line, you can use the pacemaker command to indicate to spector how to sample the data. The pacemaker command will add extra lines to the streamed output as a signal to the spector command. Feel free to leave the time text in the output, so long as the number you wish to visualise is the last thing in the line. Pacemaker will look for a time matching something like this: `10:14:52`. It’s tolerant of times out of order, but this will result in repeated periods.
 
 For example, with a log file such as below, you could run `cat test.log | pacemaker | spector`.
 
