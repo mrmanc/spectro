@@ -12,33 +12,38 @@ import (
 	"regexp"
 	"strings"
 	"flag"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
+const timeBetweenSamples = time.Second
+var terminalWidth uint
 var maxInputValue float64 = 0
-var terminalWidth uint = 130
 var scaleHasChanged bool = false
 // ANSI colors found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
-var rainbow = []uint {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
+var grayScale = []uint {16, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255}
+var rainbowScale = []uint {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
+var heatScale = []uint {16, 17, 18, 19, 20, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
+var colorScale = heatScale
 var legend string
 var newLegend string
-var timeBetweenSamples = time.Second / 1
 var colorScheme string
 var scaleType string
 var scale = linearScale
-var colorFromNumber = grayscaleFromNumber
 
 func init() {
-	flag.StringVar(&colorScheme, "color", "grayscale", "how to render the amplitudes (grayscale, rainbow)")
+	flag.StringVar(&colorScheme, "color", "heat", "how to render the amplitudes (grayscale, rainbow)")
 	flag.StringVar(&scaleType, "scale", "linear", "the scale to use for the x/amplitude axis (linear, logarithmic, exponential)")
 	flag.Parse()
 
 	switch colorScheme {
 	case "grayscale":
-		colorFromNumber = grayscaleFromNumber
+		colorScale = grayScale
 	case "rainbow":
-		colorFromNumber = rainbowFromNumber
+		colorScale = rainbowScale
+	case "heat":
+		colorScale = heatScale
 	default:
-		fmt.Fprintln(os.Stderr, "Did not recognise colors provided. Must be one of grayscale, rainbow")
+		fmt.Fprintln(os.Stderr, "Did not recognise color scheme specified. Must be one of grayscale, rainbow, heat")
 		os.Exit(1)
 	}
 	switch scaleType {
@@ -52,6 +57,8 @@ func init() {
 		fmt.Fprintln(os.Stderr, "Did not recognise scale provided. Must be one of linear, logarithmic, exponential")
 		os.Exit(2)
 	}
+	w, _, _ := terminal.GetSize(1)
+	terminalWidth = uint(w-10)
 }
 
 func main() {
@@ -64,7 +71,7 @@ func main() {
 
 	lastSampleTaken := time.Now()
 	pacemakerPresent := false
-	
+
 	for scanner.Scan() {
 		lineOfText := scanner.Text()
 		if (pacemakerPresentPattern.MatchString(lineOfText)) {
@@ -192,14 +199,7 @@ func printSample(histogram map[float64]uint64, timeText string) {
 	fmt.Fprintf(os.Stdout, "%s %s\n", timeText, renderedSample)
 }
 
-func grayscaleFromNumber(number uint64, smallest uint64, biggest uint64) uint {
-	if (number == 0) {return 16}
-	if (biggest - smallest == 0) {return 234}
-	return uint(234)+uint((255-234)*(number-smallest)/(biggest-smallest)) // higher contrast
-//	return 234+((255-234)*number/biggest) // more accurate
-}
-
-func rainbowFromNumber(number uint64, smallest uint64, biggest uint64) uint {
+func colorFromNumber(number uint64, smallest uint64, biggest uint64) uint {
 	var index uint
 	if (number == 0) {
 		index = 0
@@ -207,13 +207,13 @@ func rainbowFromNumber(number uint64, smallest uint64, biggest uint64) uint {
 		if ((biggest-smallest) > 0) {
 			// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
 			// down meant that the last color would only be used for the biggest numbers (a smaller band than the other colors).
-			index = uint((float64(float64(len(rainbow))-0.1) * float64(number-smallest) / float64(biggest-smallest)))
+			index = uint((float64(float64(len(colorScale)-1)-0.1) * float64(number-smallest) / float64(biggest-smallest)))+1
 		} else {
 			// not enough variation to create any spectrum, so just use last color
-			index = uint(len(rainbow)-1)
+			index = uint(len(colorScale)-1)
 		}
 	}
-	return rainbow[index]
+	return colorScale[index]
 }
 
 func ansiCodeFromNumber(number uint64, smallest uint64, biggest uint64) string {
