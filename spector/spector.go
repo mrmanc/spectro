@@ -29,6 +29,7 @@ var newLegend string
 var colorScheme string
 var scaleType string
 var scale = linearScale
+var reverseScale = reverseExponentialScale
 
 func init() {
 	flag.StringVar(&colorScheme, "color", "heat", "how to render the amplitudes (grayscale, rainbow)")
@@ -51,10 +52,13 @@ func init() {
 	switch scaleType {
 	case "logarithmic":
 		scale = logarithmicScale // higher resolution of higher numbers
+		reverseScale = reverseLogarithmicScale
 	case "exponential":
 		scale = exponentialScale // higher resolution of small numbers
+		reverseScale = reverseExponentialScale
 	case "linear":
 		scale = linearScale // uniform resolution
+		reverseScale = reverseLinearScale
 	default:
 		fmt.Fprintln(os.Stderr, "Did not recognise scale provided. Must be one of linear, logarithmic, exponential")
 		os.Exit(2)
@@ -62,6 +66,7 @@ func init() {
 	w, _, _ := terminal.GetSize(1)
 	terminalWidth = uint(w-10)
 }
+
 
 func main() {
 	pacemakerPresentPattern, _ := regexp.Compile("PACEMAKER_PRESENT")
@@ -73,6 +78,7 @@ func main() {
 
 	lastSampleTaken := time.Now()
 	pacemakerPresent := false
+	maximumDataPointInSample := float64(0)
 
 	for scanner.Scan() {
 		lineOfText := scanner.Text()
@@ -84,6 +90,7 @@ func main() {
 			var f float64
 			numberText := numberPattern.FindString(lineOfText)
 			f, _ = strconv.ParseFloat(numberText, 64)
+			if (f > maximumDataPointInSample) {maximumDataPointInSample = f}
 			buffer.PushBack(f)
 		}
 		if (pacemakerIterationSignal || (!pacemakerPresent && time.Since(lastSampleTaken) >= timeBetweenSamples)) {
@@ -91,10 +98,12 @@ func main() {
 			if (pacemakerIterationSignal) {
 				timeText = strings.Split(lineOfText, " ")[1]
 			}
-			histogram := sample(buffer)
+			histogram := sample(buffer, maximumDataPointInSample)
+			legend = checkLegendInitialised(legend)
 			printSample(histogram, timeText)
 			printScale(histogram, uint(len(timeText)))
 			buffer.Init()
+			maximumDataPointInSample = 0
 			lastSampleTaken = time.Now()
 		}
 	}
@@ -103,47 +112,50 @@ func main() {
 	}
 	fmt.Fprint(os.Stdout, "\n")
 }
-
-func linearScale(index uint) float64 {
+func checkLegendInitialised(legend string) string {
+	if len(legend) == 0 {
+		return formatScale(maxInputValue)
+	}
+	return legend
+}
+func linearScale(index uint, maxInputValue float64, terminalWidth uint) float64 {
 	return float64(maxInputValue) * float64(index)/float64(terminalWidth)
 }
-
-func logarithmicScale(index uint) float64 {
-	var scaleFactor = maxInputValue / math.Log2(float64(terminalWidth+1))
-	var boundary float64 = scaleFactor * math.Log2(float64(index+1))
-	return boundary
+func reverseLinearScale(number float64, maxInputValue float64, terminalWidth uint) uint {
+	return uint(number * float64(terminalWidth) / float64(maxInputValue))
 }
 
-func exponentialScale(index uint) float64 {
-	var scaleFactor = maxInputValue / (math.Exp2(float64(terminalWidth))-1)
-	var boundary float64 = scaleFactor * (math.Exp2(float64(index+1))-1)
-	return boundary
+
+func logarithmicScale(index uint, maxInputValue float64, terminalWidth uint) float64 {
+	var scaleFactor = maxInputValue / math.Log10(float64(terminalWidth+1))
+	return scaleFactor * math.Log10(float64(index+1))
 }
-func sample(points list.List) map[float64]uint64 {
-	histogram := make(map[float64]uint64)
-	var maximumDataPoint float64 = 0
-	for datapointElement := points.Front(); datapointElement != nil; datapointElement = datapointElement.Next() {
-		datapoint := datapointElement.Value.(float64)
-		if datapoint > maximumDataPoint {
-			maximumDataPoint = datapoint
-		}
-		var previousBoundary float64 = 0
-		for column := uint(1); column <= terminalWidth; column++ {
-			boundary := scale(column)
-			if datapoint > previousBoundary && datapoint < boundary {
-				histogram[boundary] = histogram[boundary] + 1
-				break
-			}
-			previousBoundary = boundary
-		}
-	}
-	if len(legend) == 0 {
-		legend = formatScale(histogram)
-	}
-	if maximumDataPoint > maxInputValue {
-		maxInputValue = maximumDataPoint * 1.2
+
+func reverseLogarithmicScale(number float64, maxInputValue float64, terminalWidth uint) uint {
+	var scaleFactor = maxInputValue / math.Log10(float64(terminalWidth+1))
+	return uint((math.Pow(10, number / scaleFactor)-1) + 0.5)
+}
+
+func exponentialScale(index uint, maxInputValue float64, terminalWidth uint) float64 {
+	var xFactor = math.Log10(maxInputValue + 1) / float64(terminalWidth)
+	return math.Pow(10, float64(index) * xFactor) - 1
+}
+
+func reverseExponentialScale(number float64, maxInputValue float64, terminalWidth uint) uint {
+	var xFactor = math.Log10(maxInputValue + 1) / float64(terminalWidth)
+	return uint(math.Floor((math.Log10(number+1)/xFactor)+0.5))
+}
+func sample(points list.List, maximumDataPointInSample float64) map[float64]uint64 {
+	if maximumDataPointInSample > maxInputValue {
+		maxInputValue = maximumDataPointInSample * 1.2
 		scaleHasChanged = true
-		newLegend = formatScale(histogram)
+		newLegend = formatScale(maxInputValue)
+	}
+	histogram := make(map[float64]uint64)
+	for datapointElement := points.Front(); datapointElement != nil; datapointElement = datapointElement.Next() {
+		dataPoint := datapointElement.Value.(float64)
+		column := reverseScale(dataPoint, maxInputValue, terminalWidth)
+		histogram[scale(column, maxInputValue, terminalWidth)] += 1
 	}
 	return histogram
 }
@@ -158,10 +170,10 @@ func printScale(histogram map[float64]uint64, paddingWidth uint) {
 	fmt.Fprint(os.Stderr, "\r")
 }
 
-func formatScale(histogram map[float64]uint64) string {
+func formatScale(maxInputValue float64) string {
 	var scaleLabels string
 	for column := uint(0); column < terminalWidth; {
-		label := fmt.Sprintf("|%d", uint64(scale(column)))
+		label := fmt.Sprintf("|%d", uint64(scale(column, maxInputValue, terminalWidth)))
 		if (column - 1) % 10 == 0 && column + uint(len(label)) < terminalWidth {
 			column += uint(len(label))
 			scaleLabels += label
@@ -179,7 +191,7 @@ func printSample(histogram map[float64]uint64, timeText string) {
 	// find the max and min amplitudes
 	amplitudeScaleAdjusted := false
 	for column := uint(1); column <= terminalWidth; column++ {
-		boundary := scale(column)
+		boundary := scale(column, maxInputValue, terminalWidth)
 		currentAmplitude := histogram[boundary]
 		if (currentAmplitude > biggest) {
 			biggest = uint64(float64(currentAmplitude) * 1.1)
@@ -192,7 +204,7 @@ func printSample(histogram map[float64]uint64, timeText string) {
 	renderedSample := ""
 	// do the plotting
 	for column := uint(1); column <= terminalWidth; column++ {
-		boundary := scale(column)
+		boundary := scale(column, maxInputValue, terminalWidth)
 		number := histogram[boundary]
 		renderedSample += colorizedDataPoint(number, biggest)
 	}
