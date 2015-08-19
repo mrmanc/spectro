@@ -6,7 +6,7 @@ It samples data read from stdin and builds a histogram, using ANSI colour codes 
 
 It was inspired by [this Sysdig tweet](https://twitter.com/sysdig/status/618826906310324224), and follows on from my [distribution Awk script](https://github.com/mrmanc/log-ninja#distribution) which displays an actual histogram (although it also has some realtime functionality).
 
-Please be kind… it is my first play with Go, and it is horrendous code. I’ve not tested it on anything other than OS X yet.
+Please be kind… it is my first play with Go, and I’m not proud of the code. I’d love to hear advice and critique from other Go developers. I’ve not tested this on anything other than OS X yet, so let me know how you get on.
 
 ## Example
 (dtrace example borrowed from [this HeatMap tool](https://github.com/brendangregg/HeatMap))
@@ -21,7 +21,7 @@ $ sudo dtrace -qn 'syscall::read:entry { self->ts = timestamp; }
 
 will display something a bit like this in your terminal:
 
-![dtrace spectrograph](https://github.com/mrmanc/spector/blob/master/sample.png)
+![dtrace spectrograph](https://dl.dropboxusercontent.com/u/4117956/spector/dtrace.gif)
 
 You can use the provided normal command to generate some test data based on a normal distribution:
 
@@ -54,10 +54,21 @@ Tue Nov 11 10:14:59.199 duration=72.7
 
 ## Building
 
-Once you have [installed Go](https://golang.org/doc/install) you can build the commands using 'go build spector.go && go build normal.go && go build pacemaker.go'. That should create binaries in that directory, which you can either put on your path or run in situ. I’ll get around to working out the correct way to organise the project at some point as I know it should be possible to get Go to install the commands.
+If you wish to use the commands, you will need to have Go set up. Once you have [installed Go](https://golang.org/doc/install) you can get the commands by running:
+
+```
+go get github.com/mrmanc/spector/normal
+go get github.com/mrmanc/spector/pacemaker
+go get github.com/mrmanc/spector/spector
+```
+
+## Contributing
+
+I would love to welcome improvements to spector, no matter how large or small! If you want to further develop spector fork the repo and see [How to Write Go Code](https://golang.org/doc/code.html) for advice if you are not familiar with Go.
 
 ## Future improvements
 
-
 * Potentially split the summarisation (histogram) functionality from the rendering, since it is useful on it’s own and can allow you to use much less space to store a replay of a period in plain text
 * Normalise the amplitude using the time since last sample to smooth out results when processing is slow
+* Try using a static logarithmic scale for the amplitude scaling to provide consistency and better resolution on small amplitudes
+* Allow the user to switch scales dynamically when the command is running
