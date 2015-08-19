@@ -58,5 +58,6 @@ Once you have [installed Go](https://golang.org/doc/install) you can build the c
 
 ## Future improvements
 
-* Allow user to select the update frequency
+
 * Potentially split the summarisation (histogram) functionality from the rendering, since it is useful on it’s own and can allow you to use much less space to store a replay of a period in plain text
+* Normalise the amplitude using the time since last sample to smooth out results when processing is slow

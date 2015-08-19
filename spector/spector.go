@@ -15,17 +15,14 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-const timeBetweenSamples = time.Second
-var terminalWidth uint
-var maxInputValue float64 = 0
-var scaleHasChanged bool = false
+var msBetweenSamples uint
 // ANSI colors found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
+var maximumValue float64 = 0
+var maximumAmplitude uint64 = 0
 var grayScale = []uint {16, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255}
 var rainbowScale = []uint {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
 var heatScale = []uint {16, 17, 18, 19, 20, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
 var colorScale = heatScale
-var legend string
-var newLegend string
 var colorScheme string
 var scaleType string
 var scale = linearScale
@@ -34,8 +31,9 @@ var reverseScale = reverseExponentialScale
 func init() {
 	flag.StringVar(&colorScheme, "color", "heat", "how to render the amplitudes (grayscale, rainbow)")
 	flag.StringVar(&scaleType, "scale", "linear", "the scale to use for the x/amplitude axis (linear, logarithmic, exponential)")
-	flag.Float64Var(&maxInputValue, "max", 0, "allows you to specify the expected maximum value to avoid rendering interruptions")
-	flag.Uint64Var(&biggest, "max-amp", 0, "allows you to specify the expected maximum amplitude value (i.e. frequency, which depends on the width of the summarisation buckets) to avoid rendering interruptions")
+	flag.Float64Var(&maximumValue, "max", 0, "allows you to specify the expected maximum value to avoid rendering interruptions")
+	flag.Uint64Var(&maximumAmplitude, "max-amp", 0, "allows you to specify the expected maximum amplitude value (i.e. frequency, which depends on the width of the summarisation buckets) to avoid rendering interruptions")
+	flag.UintVar(&msBetweenSamples, "sample-period-ms", 1000, "controls the minimum amount of milliseconds between samples")
 	flag.Parse()
 
 	switch colorScheme {
@@ -63,8 +61,7 @@ func init() {
 		fmt.Fprintln(os.Stderr, "Did not recognise scale provided. Must be one of linear, logarithmic, exponential")
 		os.Exit(2)
 	}
-	w, _, _ := terminal.GetSize(1)
-	terminalWidth = uint(w-10)
+
 }
 
 
@@ -75,10 +72,13 @@ func main() {
 
 	scanner := bufio.NewScanner(os.Stdin)
 	var buffer list.List
+	var legend string
+	var scaleHasChanged bool = false
+	w, _, _ := terminal.GetSize(1)
+	terminalWidth := uint(w-10)
 
 	lastSampleTaken := time.Now()
 	pacemakerPresent := false
-	maximumDataPointInSample := float64(0)
 
 	for scanner.Scan() {
 		lineOfText := scanner.Text()
@@ -87,23 +87,28 @@ func main() {
 		}
 		pacemakerIterationSignal := pacemakerIterationPattern.MatchString(lineOfText)
 		if (!pacemakerIterationSignal && numberPattern.MatchString(lineOfText)) {
-			var f float64
+			var dataPoint float64
 			numberText := numberPattern.FindString(lineOfText)
-			f, _ = strconv.ParseFloat(numberText, 64)
-			if (f > maximumDataPointInSample) {maximumDataPointInSample = f}
-			buffer.PushBack(f)
+			dataPoint, _ = strconv.ParseFloat(numberText, 64)
+			if (dataPoint > maximumValue) {
+				maximumValue = 1.2 * dataPoint
+				scaleHasChanged = true
+			}
+			buffer.PushBack(dataPoint)
 		}
-		if (pacemakerIterationSignal || (!pacemakerPresent && time.Since(lastSampleTaken) >= timeBetweenSamples)) {
+		if (pacemakerIterationSignal || (!pacemakerPresent && time.Since(lastSampleTaken) >= time.Millisecond * time.Duration(msBetweenSamples))) {
 			timeText := time.Time.Format(time.Now(), "15:04:05")
 			if (pacemakerIterationSignal) {
 				timeText = strings.Split(lineOfText, " ")[1]
 			}
-			histogram := sample(buffer, maximumDataPointInSample)
-			legend = checkLegendInitialised(legend)
-			printSample(histogram, timeText)
-			printScale(histogram, uint(len(timeText)))
+			histogram, newMaximumAmplitude, maximumAmplitudeHasChanged := sample(buffer, maximumValue, terminalWidth, maximumAmplitude)
+			if (maximumAmplitudeHasChanged) {maximumAmplitude = newMaximumAmplitude} // otherwise scope means it is forgotten each time
+			legend = updateLegendAndNotifyIfScaleHasChanged(legend, maximumValue, scaleHasChanged, terminalWidth)
+			printSample(histogram, timeText, maximumValue, terminalWidth, maximumAmplitude, maximumAmplitudeHasChanged)
+			printScale(histogram, uint(len(timeText)), legend)
+			// reset for next sample
+			scaleHasChanged = false
 			buffer.Init()
-			maximumDataPointInSample = 0
 			lastSampleTaken = time.Now()
 		}
 	}
@@ -112,68 +117,67 @@ func main() {
 	}
 	fmt.Fprint(os.Stdout, "\n")
 }
-func checkLegendInitialised(legend string) string {
+
+func updateLegendAndNotifyIfScaleHasChanged(legend string, maximumValue float64, scaleHasChanged bool, terminalWidth uint) string {
 	if len(legend) == 0 {
-		return formatScale(maxInputValue)
+		return formatScale(maximumValue, terminalWidth) // used when max is set
+	} else if (scaleHasChanged) {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("\nAdjusting value scale to fit new maximum of %.2f", maximumValue))
+		return formatScale(maximumValue, terminalWidth)
 	}
 	return legend
 }
-func linearScale(index uint, maxInputValue float64, terminalWidth uint) float64 {
-	return float64(maxInputValue) * float64(index)/float64(terminalWidth)
-}
-func reverseLinearScale(number float64, maxInputValue float64, terminalWidth uint) uint {
-	return uint(number * float64(terminalWidth) / float64(maxInputValue))
+
+func linearScale(index uint, maximumValue float64, terminalWidth uint) float64 {
+	return float64(maximumValue) * float64(index)/float64(terminalWidth)
 }
 
+func reverseLinearScale(number float64, maximumValue float64, terminalWidth uint) uint {
+	return uint(number * float64(terminalWidth) / float64(maximumValue))
+}
 
-func logarithmicScale(index uint, maxInputValue float64, terminalWidth uint) float64 {
-	var scaleFactor = maxInputValue / math.Log10(float64(terminalWidth+1))
+func logarithmicScale(index uint, maximumValue float64, terminalWidth uint) float64 {
+	var scaleFactor = maximumValue / math.Log10(float64(terminalWidth+1))
 	return scaleFactor * math.Log10(float64(index+1))
 }
 
-func reverseLogarithmicScale(number float64, maxInputValue float64, terminalWidth uint) uint {
-	var scaleFactor = maxInputValue / math.Log10(float64(terminalWidth+1))
+func reverseLogarithmicScale(number float64, maximumValue float64, terminalWidth uint) uint {
+	var scaleFactor = maximumValue / math.Log10(float64(terminalWidth+1))
 	return uint((math.Pow(10, number / scaleFactor)-1) + 0.5)
 }
 
-func exponentialScale(index uint, maxInputValue float64, terminalWidth uint) float64 {
-	var xFactor = math.Log10(maxInputValue + 1) / float64(terminalWidth)
+func exponentialScale(index uint, maximumValue float64, terminalWidth uint) float64 {
+	var xFactor = math.Log10(maximumValue + 1) / float64(terminalWidth)
 	return math.Pow(10, float64(index) * xFactor) - 1
 }
 
-func reverseExponentialScale(number float64, maxInputValue float64, terminalWidth uint) uint {
-	var xFactor = math.Log10(maxInputValue + 1) / float64(terminalWidth)
+func reverseExponentialScale(number float64, maximumValue float64, terminalWidth uint) uint {
+	var xFactor = math.Log10(maximumValue + 1) / float64(terminalWidth)
 	return uint(math.Floor((math.Log10(number+1)/xFactor)+0.5))
 }
-func sample(points list.List, maximumDataPointInSample float64) map[float64]uint64 {
-	if maximumDataPointInSample > maxInputValue {
-		maxInputValue = maximumDataPointInSample * 1.2
-		scaleHasChanged = true
-		newLegend = formatScale(maxInputValue)
-	}
+func sample(points list.List, maximumValue float64, terminalWidth uint, maximumAmplitude uint64) (map[float64]uint64, uint64, bool) {
 	histogram := make(map[float64]uint64)
+	maximumAmplitudeHasChanged := false
 	for datapointElement := points.Front(); datapointElement != nil; datapointElement = datapointElement.Next() {
 		dataPoint := datapointElement.Value.(float64)
-		column := reverseScale(dataPoint, maxInputValue, terminalWidth)
-		histogram[scale(column, maxInputValue, terminalWidth)] += 1
+		column := reverseScale(dataPoint, maximumValue, terminalWidth)
+		histogram[scale(column, maximumValue, terminalWidth)] += 1
+		if histogram[scale(column, maximumValue, terminalWidth)] > maximumAmplitude {
+			maximumAmplitude = histogram[scale(column, maximumValue, terminalWidth)]
+			maximumAmplitudeHasChanged = true
+		}
 	}
-	return histogram
+	return histogram, maximumAmplitude, maximumAmplitudeHasChanged
 }
 
-func printScale(histogram map[float64]uint64, paddingWidth uint) {
-	fmt.Fprintf(os.Stderr,"%"+strconv.FormatInt(int64(paddingWidth), 10)+"s %s", "", legend)
-	if (scaleHasChanged) {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("\nAdjusting scale to new maximum of %.2f", maxInputValue))
-		scaleHasChanged = false
-		legend = newLegend
-	}
-	fmt.Fprint(os.Stderr, "\r")
+func printScale(histogram map[float64]uint64, paddingWidth uint, legend string) {
+	fmt.Fprintf(os.Stderr,"%"+strconv.FormatInt(int64(paddingWidth), 10)+"s %s\r", "", legend)
 }
 
-func formatScale(maxInputValue float64) string {
+func formatScale(maximumValue float64, terminalWidth uint) string {
 	var scaleLabels string
 	for column := uint(0); column < terminalWidth; {
-		label := fmt.Sprintf("|%d", uint64(scale(column, maxInputValue, terminalWidth)))
+		label := fmt.Sprintf("|%.2f", scale(column, maximumValue, terminalWidth))
 		if (column - 1) % 10 == 0 && column + uint(len(label)) < terminalWidth {
 			column += uint(len(label))
 			scaleLabels += label
@@ -185,28 +189,18 @@ func formatScale(maxInputValue float64) string {
 	return scaleLabels
 }
 
-var biggest uint64 = 0
 
-func printSample(histogram map[float64]uint64, timeText string) {
-	// find the max and min amplitudes
-	amplitudeScaleAdjusted := false
-	for column := uint(1); column <= terminalWidth; column++ {
-		boundary := scale(column, maxInputValue, terminalWidth)
-		currentAmplitude := histogram[boundary]
-		if (currentAmplitude > biggest) {
-			biggest = uint64(float64(currentAmplitude) * 1.1)
-			amplitudeScaleAdjusted = true
-		}
-	}
-	if (amplitudeScaleAdjusted) {
-		fmt.Fprintf(os.Stderr, "\nAdjusting amplitude scale (shading) to suit maximum of %v.\n", biggest)
+func printSample(histogram map[float64]uint64, timeText string, maximumValue float64, terminalWidth uint, maximumAmplitude uint64, maximumAmplitudeHasChanged bool) {
+	if (maximumAmplitudeHasChanged) {
+		wholeLine := fmt.Sprintf("Adjusting amplitude (color) scale to suit maximum of %v.", maximumAmplitude)
+		fmt.Fprintf(os.Stderr, "%-"+strconv.FormatUint(uint64(terminalWidth+3), 10)+"s\n", wholeLine)
 	}
 	renderedSample := ""
 	// do the plotting
 	for column := uint(1); column <= terminalWidth; column++ {
-		boundary := scale(column, maxInputValue, terminalWidth)
+		boundary := scale(column, maximumValue, terminalWidth)
 		number := histogram[boundary]
-		renderedSample += colorizedDataPoint(number, biggest)
+		renderedSample += colorizedDataPoint(number, maximumAmplitude)
 	}
 	fmt.Fprintf(os.Stdout, "%s %s\n", timeText, renderedSample)
 }
