@@ -52,9 +52,9 @@ Tue Nov 11 10:14:58.510 duration=66.0
 Tue Nov 11 10:14:59.199 duration=72.7
 ```
 
-## Building
+## Installing
 
-If you wish to use the commands, you will need to have Go set up. Once you have [installed Go](https://golang.org/doc/install) you can get the commands by running:
+If you wish to use the commands, you will need to have [Go](http://golang.org/) set up. Once you have [installed Go](https://golang.org/doc/install) you can get the commands by running:
 
 ```
 go get github.com/mrmanc/spector/normal
