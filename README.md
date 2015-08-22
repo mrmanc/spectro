@@ -1,14 +1,14 @@
 # spector
 
-spector is a command line spectral analysis tool designed to visualise the distribution of streams of numbers representing something like latency, duration or size on the command line.
+spector is a command line spectral analysis tool designed to visualise the distribution of streams of decimal numbers (not necessarily integers) representing something like latency, duration or size on the command line.
 
-It samples data read from stdin and builds a histogram, using ANSI colour codes to display the distribution as an ascii heat map.
+It samples data read from stdin and builds a rotated histogram, using ANSI colour codes to display the distribution as an ascii heat map.
 
 It was inspired by [this Sysdig tweet](https://twitter.com/sysdig/status/618826906310324224), and follows on from my [distribution Awk script](https://github.com/mrmanc/log-ninja#distribution) which displays an actual histogram (although it also has some realtime functionality).
 
 It is similar to [terminal-heatmap](https://github.com/jclulow/terminal-heatmap) which I found after writing spector, and which is a much more mature C based horizontal format heatmap tool (i.e. time along the bottom axis and magnitude on the vertical axis, so check that out too. It does not have a pacemaker like function but you could approximate something similar by [piping your logs through sed and awk and using it to do the batching (click for demo)](http://showterm.io/b0cc7e9da5547c59e24fc).
 
-Please be kind… it is my first play with Go, and I’m not proud of the code. I’d love to hear advice and critique from other Go developers. I’ve not tested this on anything other than OS X yet, so let me know how you get on.
+Please be kind… this is my first play with Go, and I’m not proud of the code. I’d love to hear advice and critique from other Go developers. I’ve not tested this on anything other than OS X yet, so let me know how you get on.
 
 ## Example
 (dtrace example borrowed from [this HeatMap tool](https://github.com/brendangregg/HeatMap))
