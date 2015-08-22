@@ -1,10 +1,12 @@
 # spector
 
-spector is a command line spectral analysis tool designed to visualise the distribution of streams of numbers representing something like latency, duration or size.
+spector is a command line spectral analysis tool designed to visualise the distribution of streams of numbers representing something like latency, duration or size on the command line.
 
-It samples data read from stdin and builds a histogram, using ANSI colour codes to display the distribution as a heat map.
+It samples data read from stdin and builds a histogram, using ANSI colour codes to display the distribution as an ascii heat map.
 
 It was inspired by [this Sysdig tweet](https://twitter.com/sysdig/status/618826906310324224), and follows on from my [distribution Awk script](https://github.com/mrmanc/log-ninja#distribution) which displays an actual histogram (although it also has some realtime functionality).
+
+It is similar to [terminal-heatmap](https://github.com/jclulow/terminal-heatmap) which I found after writing spector, and which is a much more mature C based horizontal format heatmap tool (i.e. time along the bottom axis and magnitude on the vertical axis, so check that out too. It does not have a pacemaker like function but you could approximate something similar by [piping your logs through sed and awk and using it to do the batching (click for demo)](http://showterm.io/b0cc7e9da5547c59e24fc).
 
 Please be kind… it is my first play with Go, and I’m not proud of the code. I’d love to hear advice and critique from other Go developers. I’ve not tested this on anything other than OS X yet, so let me know how you get on.
 
@@ -72,3 +74,4 @@ I would love to welcome improvements to spector, no matter how large or small! I
 * Normalise the amplitude using the time since last sample to smooth out results when processing is slow
 * Try using a static logarithmic scale for the amplitude scaling to provide consistency and better resolution on small amplitudes
 * Allow the user to switch scales dynamically when the command is running
+* Use rank based rendering as suggested by this [blog post by Dave Pacheco](http://dtrace.org/blogs/dap/2011/06/20/heatmap-coloring/).
