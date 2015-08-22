@@ -6,9 +6,7 @@ It samples data read from stdin and builds a rotated histogram, using ANSI colou
 
 It was inspired by [this Sysdig tweet](https://twitter.com/sysdig/status/618826906310324224), and follows on from my [distribution Awk script](https://github.com/mrmanc/log-ninja#distribution) which displays an actual histogram (although it also has some realtime functionality).
 
-Please be kind… it is my first play with Go, and I’m not proud of the code. I’d love to hear advice and critique from other Go developers. I’ve not tested this on anything other than OS X yet, so let me know how you get on.
-
-Please be kind… this is my first play with Go, and I’m not proud of the code. I’d love to hear advice and critique from other Go developers. I’ve not tested this on anything other than OS X yet, so let me know how you get on.
+Please be kind… this is my first play with Go, and I’m not proud of the code. I’d love to hear advice and critique from other Go developers. I’ve only tested this on on OS X and CentOS, so please raise an issue if you experience problems.
 
 ## Example
 (dtrace example borrowed from [this HeatMap tool](https://github.com/brendangregg/HeatMap))
