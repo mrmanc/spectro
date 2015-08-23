@@ -69,10 +69,12 @@ func init() {
 
 func main() {
 
-	var c = make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	var sigchan = make(chan os.Signal, 1)
+	signal.Notify(sigchan, os.Interrupt)
 	go func(){
+		<-sigchan
 		fmt.Fprintf(os.Stdout, "\n")
+		os.Exit(0)
 	}()
 
 	pacemakerPresentPattern, _ := regexp.Compile("PACEMAKER_PRESENT")
