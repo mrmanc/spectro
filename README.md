@@ -13,7 +13,7 @@ Please be kind… this is my first play with Go, and I’m not proud of the code
 If you wish to use the commands, you will need to have [Go](http://golang.org/) set up. Once you have [installed Go](https://golang.org/doc/install) you can get the commands by running:
 
 ```
-go get go get github.com/mrmanc/spectro/normal github.com/mrmanc/spectro/pacemaker github.com/mrmanc/spectro/spectro
+go get github.com/mrmanc/spectro/normal github.com/mrmanc/spectro/pacemaker github.com/mrmanc/spectro/spectro
 ```
 
 ## Example
