@@ -2,26 +2,27 @@ package main
 
 import (
 	"bufio"
-	"os"
-	"fmt"
-	"strconv"
 	"container/list"
-	"time"
-	"github.com/mgutz/ansi"
-	"math"
-	"regexp"
-	"strings"
 	"flag"
+	"fmt"
+	"github.com/mgutz/ansi"
 	"golang.org/x/crypto/ssh/terminal"
+	"math"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var msBetweenSamples uint
+
 // ANSI colors found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
 var maximumValue float64
 var maximumAmplitude uint64
-var grayScale = []uint {16, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255}
-var rainbowScale = []uint {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
-var heatScale = []uint {16, 17, 18, 19, 20, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
+var grayScale = []uint{16, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255}
+var rainbowScale = []uint{16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
+var heatScale = []uint{16, 17, 18, 19, 20, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
 var colorScale = heatScale
 var colorScheme string
 var scaleType string
@@ -64,7 +65,6 @@ func init() {
 
 }
 
-
 func main() {
 	pacemakerPresentPattern, _ := regexp.Compile("PACEMAKER_PRESENT")
 	pacemakerIterationPattern, _ := regexp.Compile("PACEMAKER_ITERATION")
@@ -75,34 +75,36 @@ func main() {
 	var legend string
 	var scaleHasChanged = false
 	w, _, _ := terminal.GetSize(1)
-	terminalWidth := uint(w-10)
+	terminalWidth := uint(w - 10)
 
 	lastSampleTaken := time.Now()
 	pacemakerPresent := false
 
 	for scanner.Scan() {
 		lineOfText := scanner.Text()
-		if (pacemakerPresentPattern.MatchString(lineOfText)) {
+		if pacemakerPresentPattern.MatchString(lineOfText) {
 			pacemakerPresent = true
 		}
 		pacemakerIterationSignal := pacemakerIterationPattern.MatchString(lineOfText)
-		if (!pacemakerIterationSignal && numberPattern.MatchString(lineOfText)) {
+		if !pacemakerIterationSignal && numberPattern.MatchString(lineOfText) {
 			var dataPoint float64
 			numberText := numberPattern.FindString(lineOfText)
 			dataPoint, _ = strconv.ParseFloat(numberText, 64)
-			if (dataPoint > maximumValue) {
+			if dataPoint > maximumValue {
 				maximumValue = 1.2 * dataPoint
 				scaleHasChanged = true
 			}
 			buffer.PushBack(dataPoint)
 		}
-		if (pacemakerIterationSignal || (!pacemakerPresent && time.Since(lastSampleTaken) >= time.Millisecond * time.Duration(msBetweenSamples))) {
+		if pacemakerIterationSignal || (!pacemakerPresent && time.Since(lastSampleTaken) >= time.Millisecond*time.Duration(msBetweenSamples)) {
 			timeText := time.Time.Format(time.Now(), "15:04:05")
-			if (pacemakerIterationSignal) {
+			if pacemakerIterationSignal {
 				timeText = strings.Split(lineOfText, " ")[1]
 			}
 			histogram, newMaximumAmplitude, maximumAmplitudeHasChanged := sample(buffer, maximumValue, terminalWidth, maximumAmplitude)
-			if (maximumAmplitudeHasChanged) {maximumAmplitude = newMaximumAmplitude} // otherwise scope means it is forgotten each time
+			if maximumAmplitudeHasChanged {
+				maximumAmplitude = newMaximumAmplitude
+			} // otherwise scope means it is forgotten each time
 			legend = updateLegendAndNotifyIfScaleHasChanged(legend, maximumValue, scaleHasChanged, terminalWidth)
 			printSample(histogram, timeText, maximumValue, terminalWidth, maximumAmplitude, maximumAmplitudeHasChanged)
 			printScale(histogram, uint(len(timeText)), legend)
@@ -121,7 +123,7 @@ func main() {
 func updateLegendAndNotifyIfScaleHasChanged(legend string, maximumValue float64, scaleHasChanged bool, terminalWidth uint) string {
 	if len(legend) == 0 {
 		return formatScale(maximumValue, terminalWidth) // used when max is set
-	} else if (scaleHasChanged) {
+	} else if scaleHasChanged {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("\nAdjusting value scale to fit new maximum of %.2f", maximumValue))
 		return formatScale(maximumValue, terminalWidth)
 	}
@@ -129,7 +131,7 @@ func updateLegendAndNotifyIfScaleHasChanged(legend string, maximumValue float64,
 }
 
 func linearScale(index uint, maximumValue float64, terminalWidth uint) float64 {
-	return float64(maximumValue) * float64(index)/float64(terminalWidth)
+	return float64(maximumValue) * float64(index) / float64(terminalWidth)
 }
 
 func reverseLinearScale(number float64, maximumValue float64, terminalWidth uint) uint {
@@ -143,17 +145,17 @@ func logarithmicScale(index uint, maximumValue float64, terminalWidth uint) floa
 
 func reverseLogarithmicScale(number float64, maximumValue float64, terminalWidth uint) uint {
 	var scaleFactor = maximumValue / math.Log10(float64(terminalWidth+1))
-	return uint((math.Pow(10, number / scaleFactor)-1) + 0.5)
+	return uint((math.Pow(10, number/scaleFactor) - 1) + 0.5)
 }
 
 func exponentialScale(index uint, maximumValue float64, terminalWidth uint) float64 {
-	var xFactor = math.Log10(maximumValue + 1) / float64(terminalWidth)
-	return math.Pow(10, float64(index) * xFactor) - 1
+	var xFactor = math.Log10(maximumValue+1) / float64(terminalWidth)
+	return math.Pow(10, float64(index)*xFactor) - 1
 }
 
 func reverseExponentialScale(number float64, maximumValue float64, terminalWidth uint) uint {
-	var xFactor = math.Log10(maximumValue + 1) / float64(terminalWidth)
-	return uint(math.Floor((math.Log10(number+1)/xFactor)+0.5))
+	var xFactor = math.Log10(maximumValue+1) / float64(terminalWidth)
+	return uint(math.Floor((math.Log10(number+1) / xFactor) + 0.5))
 }
 func sample(points list.List, maximumValue float64, terminalWidth uint, maximumAmplitude uint64) (map[float64]uint64, uint64, bool) {
 	histogram := make(map[float64]uint64)
@@ -171,27 +173,26 @@ func sample(points list.List, maximumValue float64, terminalWidth uint, maximumA
 }
 
 func printScale(histogram map[float64]uint64, paddingWidth uint, legend string) {
-	fmt.Fprintf(os.Stderr,"%"+strconv.FormatInt(int64(paddingWidth), 10)+"s %s\r", "", legend)
+	fmt.Fprintf(os.Stderr, "%"+strconv.FormatInt(int64(paddingWidth), 10)+"s %s\r", "", legend)
 }
 
 func formatScale(maximumValue float64, terminalWidth uint) string {
 	var scaleLabels string
 	for column := uint(0); column < terminalWidth; {
 		label := fmt.Sprintf("|%.2f", scale(column, maximumValue, terminalWidth))
-		if (column - 1) % 10 == 0 && column + uint(len(label)) < terminalWidth {
+		if (column-1)%10 == 0 && column+uint(len(label)) < terminalWidth {
 			column += uint(len(label))
 			scaleLabels += label
 		} else {
 			scaleLabels += " "
-			column ++
+			column++
 		}
 	}
 	return scaleLabels
 }
 
-
 func printSample(histogram map[float64]uint64, timeText string, maximumValue float64, terminalWidth uint, maximumAmplitude uint64, maximumAmplitudeHasChanged bool) {
-	if (maximumAmplitudeHasChanged) {
+	if maximumAmplitudeHasChanged {
 		wholeLine := fmt.Sprintf("Adjusting amplitude (color) scale to suit maximum of %v.", maximumAmplitude)
 		fmt.Fprintf(os.Stderr, "%-"+strconv.FormatUint(uint64(terminalWidth+3), 10)+"s\n", wholeLine)
 	}
@@ -207,12 +208,12 @@ func printSample(histogram map[float64]uint64, timeText string, maximumValue flo
 
 func colorFromNumber(number uint64, biggest uint64) uint {
 	var index uint
-	if (number == 0) {
+	if number == 0 {
 		index = 0
 	} else {
 		// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
 		// down meant that the last color would only be used for the biggest numbers (a smaller band than the other colors).
-		index = uint((float64(float64(len(colorScale)-1)-0.1) * float64(number) / float64(biggest)))+1
+		index = uint((float64(float64(len(colorScale)-1)-0.1) * float64(number) / float64(biggest))) + 1
 	}
 	return colorScale[index]
 }
