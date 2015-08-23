@@ -17,8 +17,8 @@ import (
 
 var msBetweenSamples uint
 // ANSI colors found using https://github.com/Benvie/repl-rainbow and http://bitmote.com/index.php?post/2012/11/19/Using-ANSI-Color-Codes-to-Colorize-Your-Bash-Prompt-on-Linux
-var maximumValue float64 = 0
-var maximumAmplitude uint64 = 0
+var maximumValue float64
+var maximumAmplitude uint64
 var grayScale = []uint {16, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255}
 var rainbowScale = []uint {16, 53, 90, 127, 164, 201, 165, 129, 93, 57, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
 var heatScale = []uint {16, 17, 18, 19, 20, 21, 27, 33, 39, 45, 51, 50, 49, 48, 47, 46, 82, 118, 154, 190, 226, 220, 214, 208, 202, 196}
@@ -73,7 +73,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	var buffer list.List
 	var legend string
-	var scaleHasChanged bool = false
+	var scaleHasChanged = false
 	w, _, _ := terminal.GetSize(1)
 	terminalWidth := uint(w-10)
 
@@ -161,7 +161,7 @@ func sample(points list.List, maximumValue float64, terminalWidth uint, maximumA
 	for datapointElement := points.Front(); datapointElement != nil; datapointElement = datapointElement.Next() {
 		dataPoint := datapointElement.Value.(float64)
 		column := reverseScale(dataPoint, maximumValue, terminalWidth)
-		histogram[scale(column, maximumValue, terminalWidth)] += 1
+		histogram[scale(column, maximumValue, terminalWidth)]++
 		if histogram[scale(column, maximumValue, terminalWidth)] > maximumAmplitude {
 			maximumAmplitude = histogram[scale(column, maximumValue, terminalWidth)]
 			maximumAmplitudeHasChanged = true
