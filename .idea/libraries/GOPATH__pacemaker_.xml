@@ -1,0 +1,17 @@
+<component name="libraryTable">
+  <library name="GOPATH &lt;pacemaker&gt;">
+    <CLASSES>
+      <root url="file://$USER_HOME$/go/src/github.com" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <excluded>
+      <root url="file://$PROJECT_DIR$" />
+      <root url="file://$USER_HOME$/go/src/github.com/mgutz/ansi/.git" />
+      <root url="file://$PROJECT_DIR$/pacemaker" />
+      <root url="file://$USER_HOME$/go/src/github.com/mattn/go-colorable/.git" />
+      <root url="file://$PROJECT_DIR$/normal-stream" />
+      <root url="file://$USER_HOME$/go/src/github.com/mattn/go-colorable/_example" />
+    </excluded>
+  </library>
+</component>
