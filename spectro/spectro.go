@@ -222,7 +222,7 @@ func colorFromNumber(number uint64, biggest uint64) uint {
 	} else {
 		// it was too late and my head hurt too much to work out how to get rid of the 0.1 constant. Without it the rounding
 		// down meant that the last color would only be used for the biggest numbers (a smaller band than the other colors).
-		index = uint((float64(float64(len(colorScale)-1)-0.1) * float64(number) / float64(biggest))) + 1
+		index = uint(((float64(len(colorScale)-1)-0.1) * float64(number) / float64(biggest))) + 1
 	}
 	return colorScale[index]
 }
