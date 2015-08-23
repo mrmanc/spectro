@@ -8,6 +8,14 @@ It was inspired by [this Sysdig tweet](https://twitter.com/sysdig/status/6188269
 
 Please be kind… this is my first play with Go, and I’m not proud of the code. I’d love to hear advice and critique from other Go developers. I’ve only tested this on on OS X and CentOS, so please raise an issue if you experience problems.
 
+## Installing
+
+If you wish to use the commands, you will need to have [Go](http://golang.org/) set up. Once you have [installed Go](https://golang.org/doc/install) you can get the commands by running:
+
+```
+go get go get github.com/mrmanc/spectro/normal github.com/mrmanc/spectro/pacemaker github.com/mrmanc/spectro/spectro
+```
+
 ## Example
 (dtrace example borrowed from [this HeatMap tool](https://github.com/brendangregg/HeatMap))
 
@@ -21,15 +29,15 @@ $ sudo dtrace -qn 'syscall::read:entry { self->ts = timestamp; }
 
 will display something a bit like this in your terminal:
 
-![dtrace spectrograph](https://dl.dropboxusercontent.com/u/4117956/spectro/dtrace.gif)
+![dtrace spectrograph](http://markcrossfield.co.uk/images/spectro/dtrace.gif)
 
 You can use the provided normal command to generate some test data based on a normal distribution:
 
-![normal distribution spectrograph](https://dl.dropboxusercontent.com/u/4117956/spectro/normal.gif)
+![normal distribution spectrograph](http://markcrossfield.co.uk/images/spectro/normal.gif)
 
 Using the provided sample.log and the pacemaker command you can play back activity:
 
-![sample log file spectrograph](https://dl.dropboxusercontent.com/u/4117956/spectro/sample.gif)
+![sample log file spectrograph](http://markcrossfield.co.uk/images/spectro/sample.gif)
 
 ## Historic data
 
@@ -50,16 +58,6 @@ Tue Nov 11 10:14:58.510 duration=24.3
 Tue Nov 11 10:14:58.510 duration=43.2
 Tue Nov 11 10:14:58.510 duration=66.0
 Tue Nov 11 10:14:59.199 duration=72.7
-```
-
-## Installing
-
-If you wish to use the commands, you will need to have [Go](http://golang.org/) set up. Once you have [installed Go](https://golang.org/doc/install) you can get the commands by running:
-
-```
-go get github.com/mrmanc/spectro/normal
-go get github.com/mrmanc/spectro/pacemaker
-go get github.com/mrmanc/spectro/spectro
 ```
 
 ## Contributing
