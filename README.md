@@ -1,6 +1,6 @@
-# spector
+# spectro
 
-spector is a command line spectral analysis tool designed to visualise the distribution of streams of decimal numbers (not necessarily integers) representing something like latency, duration or size on the command line.
+spectro is a command line spectral analysis tool designed to visualise the distribution of streams of decimal numbers (not necessarily integers) representing something like latency, duration or size on the command line.
 
 It samples data read from stdin and builds a rotated histogram, using ANSI colour codes to display the distribution as an ascii heat map.
 
@@ -11,31 +11,31 @@ Please be kind… this is my first play with Go, and I’m not proud of the code
 ## Example
 (dtrace example borrowed from [this HeatMap tool](https://github.com/brendangregg/HeatMap))
 
-Using the below (after adjusting spector.go to use the exponential scale)…
+Using the below (after adjusting spectro.go to use the exponential scale)…
 
 ```
 $ sudo dtrace -qn 'syscall::read:entry { self->ts = timestamp; }
     syscall::read:return /self->ts/ {
-    printf("%d\n", (timestamp - self->ts) / 1000); self->ts = 0; }' | spector
+    printf("%d\n", (timestamp - self->ts) / 1000); self->ts = 0; }' | spectro
 ```
 
 will display something a bit like this in your terminal:
 
-![dtrace spectrograph](https://dl.dropboxusercontent.com/u/4117956/spector/dtrace.gif)
+![dtrace spectrograph](https://dl.dropboxusercontent.com/u/4117956/spectro/dtrace.gif)
 
 You can use the provided normal command to generate some test data based on a normal distribution:
 
-![normal distribution spectrograph](https://dl.dropboxusercontent.com/u/4117956/spector/normal.gif)
+![normal distribution spectrograph](https://dl.dropboxusercontent.com/u/4117956/spectro/normal.gif)
 
 Using the provided sample.log and the pacemaker command you can play back activity:
 
-![sample log file spectrograph](https://dl.dropboxusercontent.com/u/4117956/spector/sample.gif)
+![sample log file spectrograph](https://dl.dropboxusercontent.com/u/4117956/spectro/sample.gif)
 
 ## Historic data
 
-If you have historic logs with a formatted time in the line, you can use the pacemaker command to indicate to spector how to sample the data. The pacemaker command will add extra lines to the streamed output as a signal to the spector command. Feel free to leave the time text in the output, so long as the number you wish to visualise is the last thing in the line. Pacemaker will look for a time matching something like this: `10:14:52`. It’s tolerant of times out of order, but this will result in repeated periods.
+If you have historic logs with a formatted time in the line, you can use the pacemaker command to indicate to spectro how to sample the data. The pacemaker command will add extra lines to the streamed output as a signal to the spectro command. Feel free to leave the time text in the output, so long as the number you wish to visualise is the last thing in the line. Pacemaker will look for a time matching something like this: `10:14:52`. It’s tolerant of times out of order, but this will result in repeated periods.
 
-For example, with a log file such as below, you could run `cat test.log | pacemaker | spector`.
+For example, with a log file such as below, you could run `cat test.log | pacemaker | spectro`.
 
 ```
 Tue Nov 11 10:14:52.130 duration=60.7
@@ -57,14 +57,14 @@ Tue Nov 11 10:14:59.199 duration=72.7
 If you wish to use the commands, you will need to have [Go](http://golang.org/) set up. Once you have [installed Go](https://golang.org/doc/install) you can get the commands by running:
 
 ```
-go get github.com/mrmanc/spector/normal
-go get github.com/mrmanc/spector/pacemaker
-go get github.com/mrmanc/spector/spector
+go get github.com/mrmanc/spectro/normal
+go get github.com/mrmanc/spectro/pacemaker
+go get github.com/mrmanc/spectro/spectro
 ```
 
 ## Contributing
 
-I would love to welcome improvements to spector, no matter how large or small! If you want to further develop spector fork the repo and see [How to Write Go Code](https://golang.org/doc/code.html) for advice if you are not familiar with Go.
+I would love to welcome improvements to spectro, no matter how large or small! If you want to further develop spectro fork the repo and see [How to Write Go Code](https://golang.org/doc/code.html) for advice if you are not familiar with Go.
 
 ## Future improvements
 

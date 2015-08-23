@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/spector.iml" filepath="$PROJECT_DIR$/spector.iml" />
+      <module fileurl="file://$PROJECT_DIR$/spectro.iml" filepath="$PROJECT_DIR$/spectro.iml" />
     </modules>
   </component>
 </project>
