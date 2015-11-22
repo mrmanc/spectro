@@ -66,7 +66,7 @@ I would love to welcome improvements to spectro, no matter how large or small! I
 
 ## Future improvements
 
-* Potentially split the summarisation (histogram) functionality from the rendering, since it is useful on it’s own and can allow you to use much less space to store a replay of a period in plain text
+* Potentially split the summarisation (histogram) functionality from the rendering, since it is useful on its own and can allow you to use much less space to store a replay of a period in plain text
 * Normalise the amplitude using the time since last sample to smooth out results when processing is slow
 * Try using a static logarithmic scale for the amplitude scaling to provide consistency and better resolution on small amplitudes
 * Allow the user to switch scales dynamically when the command is running
