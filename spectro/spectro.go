@@ -118,7 +118,7 @@ func main() {
 			} // otherwise scope means it is forgotten each time
 			legend = updateLegendAndNotifyIfScaleHasChanged(legend, maximumValue, scaleHasChanged, terminalWidth)
 			printSample(histogram, timeText, maximumValue, terminalWidth, maximumMagnitude, maximumMagnitudeHasChanged)
-			printScale(histogram, uint(len(timeText)), legend)
+			printScale(histogram, int(len(timeText)), legend)
 			// reset for next sample
 			scaleHasChanged = false
 			buffer.Init()
@@ -183,8 +183,8 @@ func sample(points list.List, maximumValue float64, terminalWidth uint, maximumM
 	return histogram, maximumMagnitude, maximumMagnitudeHasChanged
 }
 
-func printScale(histogram map[float64]uint64, paddingWidth uint, legend string) {
-	fmt.Fprintf(os.Stderr, "%"+strconv.FormatInt(int64(paddingWidth), 10)+"s %s\r", "", legend)
+func printScale(histogram map[float64]uint64, paddingWidth int, legend string) {
+	fmt.Fprint(os.Stderr, strings.Repeat(" ", paddingWidth), " ",legend,"\r")
 }
 
 func formatScale(maximumValue float64, terminalWidth uint) string {
