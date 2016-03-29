@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/mgutz/ansi"
 	"golang.org/x/crypto/ssh/terminal"
+	"log"
 	"math"
 	"os"
 	"os/signal"
@@ -29,13 +30,14 @@ var colorScheme string
 var scaleType string
 var scale = linearScale
 var reverseScale = reverseExponentialScale
+const defaultMsBetweenSamples = 1000
 
 func init() {
 	flag.StringVar(&colorScheme, "color", "heat", "how to render the magnitudes (grayscale, rainbow)")
 	flag.StringVar(&scaleType, "scale", "linear", "the scale to use for the x/value axis (linear, logarithmic, exponential)")
 	flag.Float64Var(&maximumValue, "maximum", 0, "allows you to specify the expected maximum value to avoid rendering interruptions")
 	flag.Uint64Var(&maximumMagnitude, "magnitude", 0, "allows you to specify the expected maximum magnitude value (i.e. frequency, which depends on the width of the summarisation buckets) to avoid rendering interruptions")
-	flag.UintVar(&msBetweenSamples, "sample-period-ms", 1000, "controls the minimum amount of milliseconds between samples")
+	flag.UintVar(&msBetweenSamples, "sample-period-ms", defaultMsBetweenSamples, "controls the minimum amount of milliseconds between samples")
 	flag.Parse()
 
 	switch colorScheme {
@@ -95,6 +97,9 @@ func main() {
 		lineOfText := scanner.Text()
 		if pacemakerPresentPattern.MatchString(lineOfText) {
 			pacemakerPresent = true
+			if msBetweenSamples != defaultMsBetweenSamples {
+				log.Fatal("You specified a value for sample-period-ms but a pacemaker signal was found. If you are processing logs retrospectively stick with the pacemaker. If you are sampling in real time ditch the pacemaker.")
+			}
 		}
 		pacemakerIterationSignal := pacemakerIterationPattern.MatchString(lineOfText)
 		if !pacemakerIterationSignal && numberPattern.MatchString(lineOfText) {
