@@ -16,7 +16,7 @@ If you wish to use the commands, you will need to have [Go](http://golang.org/) 
 go get github.com/mrmanc/spectro/normal github.com/mrmanc/spectro/pacemaker github.com/mrmanc/spectro/spectro
 ```
 
-## Example
+## Sampling real time data
 (dtrace example borrowed from [this HeatMap tool](https://github.com/brendangregg/HeatMap))
 
 Using the below (after adjusting spectro.go to use the exponential scale)…
@@ -35,13 +35,19 @@ You can use the provided normal command to generate some test data based on a no
 
 ![normal distribution spectrograph](http://markcrossfield.co.uk/images/spectro/normal.gif)
 
-Using the provided sample.log and the pacemaker command you can play back activity:
-
-![sample log file spectrograph](http://markcrossfield.co.uk/images/spectro/sample.gif)
+You can tell spectro to sample at intervals other than the default once-per-second using the `sample-period-ms` option. For example to sample once every ten seconds:
+```
+$ sudo dtrace -qn 'syscall::read:entry { self->ts = timestamp; }
+    syscall::read:return /self->ts/ {
+    printf("%d\n", (timestamp - self->ts) / 1000); self->ts = 0; }' | spectro -sample-period-s 10000
+```
+`
 
 ## Historic data
 
-If you have historic logs with a formatted time in the line, you can use the pacemaker command to indicate to spectro how to sample the data. The pacemaker command will add extra lines to the streamed output as a signal to the spectro command. Feel free to leave the time text in the output, so long as the number you wish to visualise is the last thing in the line. Pacemaker will look for a time matching something like this: `10:14:52`. It’s tolerant of times out of order, but this will result in repeated periods.
+If you have historic logs with a formatted time in the line, you can use the pacemaker command to indicate to spectro how to sample the data. The pacemaker command will add extra lines to the streamed output as a signal to the spectro command.
+
+Feel free to leave the time text in the output, so long as the number you wish to visualise is the last thing in the line. Pacemaker will look for a time matching something like this: `10:14:52`. It’s tolerant of times out of order, but this will result in repeated periods.
 
 For example, with a log file such as below, you could run `cat test.log | pacemaker | spectro`.
 
@@ -59,6 +65,12 @@ Tue Nov 11 10:14:58.510 duration=43.2
 Tue Nov 11 10:14:58.510 duration=66.0
 Tue Nov 11 10:14:59.199 duration=72.7
 ```
+
+Using the provided sample.log and the pacemaker command you can play back activity:
+
+![sample log file spectrograph](http://markcrossfield.co.uk/images/spectro/sample.gif)
+
+By default `pacemaker` will trigger a sample once per second, but you can adjust that by specifying the `sample-period-s` option. For example to sample once evety ten minutes you might run `cat test.log | pacemaker -sample-period-s 600 | spectro`
 
 ## Contributing
 
